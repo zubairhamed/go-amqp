@@ -15,8 +15,8 @@ func (t ListEmptyType) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t ListEmptyType) GetTypeFormatCode() byte {
+	return 0
 }
 
 type List8Type struct {
@@ -31,8 +31,8 @@ func (t List8Type) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t List8Type) GetTypeFormatCode() byte {
+	return 0
 }
 
 type List32Type struct {
@@ -47,6 +47,6 @@ func (t List32Type) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t List32Type) GetTypeFormatCode() byte {
+	return 0
 }

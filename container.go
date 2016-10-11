@@ -2,9 +2,10 @@ package amqp
 
 import (
 	"bufio"
-	"github.com/wendal/errors"
 	"log"
 	"net"
+
+	"github.com/wendal/errors"
 )
 
 func NewContainer(network string) *Container {

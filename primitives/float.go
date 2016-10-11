@@ -11,7 +11,6 @@ func (t FloatType) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t FloatType) GetTypeFormatCode() byte {
+	return 0
 }
-

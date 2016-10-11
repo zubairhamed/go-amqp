@@ -11,10 +11,9 @@ func (t UIntType) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t UIntType) GetTypeFormatCode() byte {
+	return 0
 }
-
 
 type SmallUIntType struct {
 }
@@ -27,10 +26,9 @@ func (t SmallUIntType) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t SmallUIntType) GetTypeFormatCode() byte {
+	return 0
 }
-
 
 type UIntZeroType struct {
 }
@@ -43,8 +41,8 @@ func (t UIntZeroType) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t UIntZeroType) GetTypeFormatCode() byte {
+	return 0
 }
 
 type IntType struct {
@@ -58,8 +56,8 @@ func (t IntType) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t IntType) GetTypeFormatCode() byte {
+	return 0
 }
 
 type SmallIntType struct {
@@ -73,7 +71,6 @@ func (t SmallIntType) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t SmallIntType) GetTypeFormatCode() byte {
+	return 0
 }
-

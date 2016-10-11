@@ -11,8 +11,8 @@ func (t Decimal32Type) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t Decimal32Type) GetTypeFormatCode() byte {
+	return 0
 }
 
 type Decimal64Type struct {
@@ -26,6 +26,10 @@ func (t Decimal64Type) Encode() []byte {
 	return []byte{}
 }
 
+func (t Decimal64Type) GetTypeFormatCode() byte {
+	return 0
+}
+
 type Decimal128Type struct {
 }
 
@@ -37,6 +41,6 @@ func (t Decimal128Type) Encode() []byte {
 	return []byte{}
 }
 
-func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+func (t Decimal128Type) GetTypeFormatCode() byte {
+	return 0
 }

@@ -10,3 +10,7 @@ func (t NullType) Validate() error {
 func (t NullType) Encode() []byte {
 	return []byte{}
 }
+
+func (t NullType) GetTypeFormatCode() byte {
+	return 0
+}

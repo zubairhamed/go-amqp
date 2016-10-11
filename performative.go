@@ -2,7 +2,7 @@ package amqp
 
 import "github.com/zubairhamed/go-amqp/primitives"
 
-func NewPerformativeOpen(containerId, hostname string) *PerformativeOpen {
+func NewOpenPerformative(containerId, hostname string) *PerformativeOpen {
 	return &PerformativeOpen{
 		ContainerId: containerId,
 		Hostname:    hostname,
@@ -10,16 +10,16 @@ func NewPerformativeOpen(containerId, hostname string) *PerformativeOpen {
 }
 
 type PerformativeOpen struct {
-	ContainerId         primitives.StringType
-	Hostname            primitives.StringType
-	MaxFrameSize        primitives.UIntType
-	ChannelMax          primitives.UShortType
-	IdleTimeOut         primitives.UIntType
-	OutgoingLocales     primitives.ListType
-	IncomingLocales     primitives.ListType
-	OfferedCapabilities primitives.ListType
-	DesiredCapabilities primitives.ListType
-	Properties          primitives.MapType
+	ContainerId         string
+	Hostname            string
+	MaxFrameSize        primitives.TypeFormatCode
+	ChannelMax          primitives.TypeFormatCode
+	IdleTimeout         primitives.TypeFormatCode
+	OutgoingLocales     []string
+	IncomingLocales     []string
+	OfferedCapabilities []string
+	DesiredCapabilities []string
+	Properties          primitives.TypeFormatCode
 }
 
 func (p *PerformativeOpen) Encode() []byte {

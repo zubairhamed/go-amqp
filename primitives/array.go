@@ -16,7 +16,7 @@ func (t Array8Type) Encode() []byte {
 }
 
 func (t Array8Type) GetTypeFormatCode() byte {
-	return byte{}
+	return 0
 }
 
 type Array32Type struct {
@@ -32,5 +32,5 @@ func (t Array32Type) Encode() []byte {
 }
 
 func (t Array32Type) GetTypeFormatCode() byte {
-	return byte{}
+	return 0
 }

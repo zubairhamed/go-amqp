@@ -10,3 +10,7 @@ func (t UUIDType) Validate() error {
 func (t UUIDType) Encode() []byte {
 	return []byte{}
 }
+
+func (t UUIDType) GetTypeFormatCode() byte {
+	return 0
+}

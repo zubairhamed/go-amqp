@@ -22,6 +22,10 @@ func (t Map8Type) Encode() []byte {
 	return []byte{}
 }
 
+func (t Map8Type) GetTypeFormatCode() byte {
+	return 0
+}
+
 type Map32Type struct {
 }
 
@@ -33,6 +37,10 @@ func (t Map32Type) Encode() []byte {
 	return []byte{}
 }
 
+func (t Map32Type) GetTypeFormatCode() byte {
+	return 0
+}
+
 type MapKeyValue struct {
 }
 
@@ -42,4 +50,8 @@ func (t MapKeyValue) Validate() error {
 
 func (t MapKeyValue) Encode() []byte {
 	return []byte{}
+}
+
+func (t MapKeyValue) GetTypeFormatCode() byte {
+	return 0
 }

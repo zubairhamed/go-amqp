@@ -10,3 +10,7 @@ func (t TimestampType) Validate() error {
 func (t TimestampType) Encode() []byte {
 	return []byte{}
 }
+
+func (t TimestampType) GetTypeFormatCode() byte {
+	return 0
+}
