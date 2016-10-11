@@ -39,8 +39,8 @@ func (c *Container) doConnect() (conn net.Conn) {
 		panic(err)
 	}
 
-	var out = []byte{0x00, 0x53, 0x10, 0xC0}
-	out = append(out, []byte{0xA1, 0x09}...)
+	var out = []byte{0x00, 0x53, 0x10, 0xC0, 0x20, 0x0A}
+	out = append(out, []byte{0xA1, 0x0B}...)
 	out = append(out, []byte("MyContainer")...)
 	out = append(out, []byte{0xA1, 0x09}...)
 	out = append(out, []byte("localhost")...)
@@ -49,6 +49,7 @@ func (c *Container) doConnect() (conn net.Conn) {
 	conn.Write(out)
 	len, err = bufio.NewReader(conn).Read(readBuf)
 	log.Println("Incoming #2:", readBuf[:len], "of length", len)
+	log.Println("str:", string(readBuf))
 
 	//CreatePerformativeFrame(t TypeFormatCode, containerId, hostname string) (b []byte) {
 	//
