@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"log"
 	"net"
-
-	"github.com/wendal/errors"
 )
 
 func NewContainer(network string) *Container {
@@ -33,52 +31,28 @@ func (c *Container) doConnect() (conn net.Conn) {
 
 	readBuf := make([]byte, 1500)
 	len, err := bufio.NewReader(conn).Read(readBuf)
-	log.Println("Incoming:", readBuf[:len], "of length", len)
 
-	err = c.validateProtocolHeader(protocolType, readBuf)
+	err, _ = UnmarshalProtocolHeader(readBuf[:len])
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
-	var out = []byte{0x00, 0x53, 0x10, 0xC0, 0x20, 0x0A}
-	out = append(out, []byte{0xA1, 0x0B}...)
-	out = append(out, []byte("MyContainer")...)
-	out = append(out, []byte{0xA1, 0x09}...)
-	out = append(out, []byte("localhost")...)
-	out = append(out, []byte{0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40}...)
+	// Send Open Performative
+	openPerformative := NewOpenPerformative("MyContainer", "localhost")
+	_, err = SendPerformative(conn, openPerformative)
+	if err != nil {
+		panic(err.Error())
+	}
 
-	conn.Write(out)
-	len, err = bufio.NewReader(conn).Read(readBuf)
-	log.Println("Incoming #2:", readBuf[:len], "of length", len)
-	log.Println("str:", string(readBuf))
+	log.Println("Receiving Open Peformative")
+	_, err = bufio.NewReader(conn).Read(readBuf)
 
-	//CreatePerformativeFrame(t TypeFormatCode, containerId, hostname string) (b []byte) {
-	//
-	//}
-
-	//max-frame-size uint
-	//null
-	//
-	//channel-max ushort
-	//null
-	//
-	//idle-time-out milliseconds
-	//null
-	//
-	//outgoing-locales
-	//null
-	//
-	//incoming-locales
-	//null
-	//
-	//offered-capabilities
-	//null
-	//
-	//desired-capabilities
-	//null
-	//
-	//properties
-	//null
+	err = openPerformative.Decode(readBuf)
+	if err != nil {
+		log.Panic(err)
+		return
+	}
+	// Read Incoming Open Performative
 
 	log.Println("Protocol Negotiation OK")
 
@@ -90,37 +64,6 @@ func (c *Container) doConnect() (conn net.Conn) {
 	// << Attach
 	// << Flow
 
-	return
-}
-
-func (c *Container) validateProtocolHeader(t ProtocolType, buf []byte) (err error) {
-	var amqpLiteral [4]byte
-	copy(amqpLiteral[:], buf[:4])
-
-	amqpProtocolType := byte(buf[4])
-	amqpProtocolMajor := buf[5]
-	amqpProtocolMinor := buf[6]
-	amqpProtocolRev := buf[7]
-
-	if amqpLiteral != [4]byte{65, 77, 81, 80} {
-		err = errors.New("Invalid Header, not AMQP")
-	}
-
-	if amqpProtocolType != byte(t) {
-		err = errors.New("Mismatched Protocol Type")
-	}
-
-	if amqpProtocolMajor != 1 {
-		err = errors.New("Mismatched Protocol Version Major")
-	}
-
-	if amqpProtocolMinor != 0 {
-		err = errors.New("Mismatched Protocol Version Minor")
-	}
-
-	if amqpProtocolRev != 0 {
-		err = errors.New("Mismatched Protocol Version Revision")
-	}
 	return
 }
 

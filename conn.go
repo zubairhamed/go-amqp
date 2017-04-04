@@ -9,3 +9,15 @@ type Connection struct {
 func (c *Connection) CreateSender(address string) *Sender {
 	return &Sender{}
 }
+
+func SendPerformative(c net.Conn, p *PerformativeOpen) (int, error) {
+
+	b, err := p.Encode()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	c.Write(b)
+
+	return 0, nil
+}
