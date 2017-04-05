@@ -2,7 +2,14 @@ package types
 
 import (
 	"errors"
+	"encoding/binary"
 )
+
+func NewSymbol(v string) *Symbol {
+	return &Symbol{
+		value: v,
+	}
+}
 
 type Symbol struct {
 	BaseAMQPType
@@ -17,7 +24,31 @@ func (s *Symbol) Encode() ([]byte, uint, error) {
 }
 
 func EncodeSymbolField(s *Symbol) ([]byte, uint, error) {
-	return nil, 0, nil
+	if s == nil {
+		return []byte { byte(TYPE_NULL) }, 1, nil
+	}
+
+	v := s.value
+	b := []byte{}
+
+	vlen := len(v)
+
+	switch {
+	case vlen == 0 || vlen < 256:
+		b = append(b, byte(TYPE_SYMBOL_8))
+		b = append(b, byte(vlen))
+
+	case vlen > 255 && vlen < 4294967295:
+		b = append(b, byte(TYPE_SYMBOL_32))
+
+		byteVal := make([]byte, TYPE_SIZE_4)
+		binary.BigEndian.PutUint32(byteVal, uint32(vlen))
+		b = append(b, byteVal...)
+	}
+
+	b = append(b, []byte(v)...)
+
+	return b, uint(len(b)), nil
 }
 
 func DecodeSymbolField(v []byte) (val *Symbol, fieldLength uint, err error) {

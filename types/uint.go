@@ -5,6 +5,13 @@ import (
 	"errors"
 )
 
+func NewUInt(v uint32) *UInt {
+	return &UInt{
+		value: v,
+	}
+}
+
+
 type UInt struct {
 	BaseAMQPType
 	value uint32
@@ -18,7 +25,29 @@ func (s *UInt) Encode() ([]byte, uint, error) {
 }
 
 func EncodeUIntField(s *UInt) ([]byte, uint, error) {
-	return nil, 0, nil
+	if s == nil {
+		return []byte { byte(TYPE_UINT_0) }, 1, nil
+	}
+
+	v := s.value
+	b := []byte{}
+
+	switch {
+	case v == 0:
+		b = append(b, byte(TYPE_UINT_0))
+
+	case v > 255:
+		b = append(b, byte(TYPE_UINT))
+
+		byteVal := make([]byte, TYPE_SIZE_4)
+		binary.BigEndian.PutUint32(byteVal, v)
+		b = append(b, byteVal...)
+
+	case v < 256:
+		b = append(b, []byte{ byte(TYPE_UINT_SMALL),  byte(v) }...)
+	}
+
+	return b, uint(len(b)), nil
 }
 
 func DecodeUIntField(v []byte) (val *UInt, fieldLength uint, err error) {

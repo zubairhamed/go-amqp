@@ -2,6 +2,12 @@ package types
 
 import "encoding/binary"
 
+func NewULong(v uint64) *ULong {
+	return &ULong{
+		value: v,
+	}
+}
+
 type ULong struct {
 	BaseAMQPType
 	value uint64
@@ -15,6 +21,10 @@ func (s *ULong) Encode() ([]byte, uint, error) {
 }
 
 func EncodeULongField(s *ULong) ([]byte, uint, error) {
+	if s == nil {
+		return []byte { byte(TYPE_ULONG_0) }, 1, nil
+	}
+
 	v := s.value
 	b := []byte{}
 
@@ -25,9 +35,9 @@ func EncodeULongField(s *ULong) ([]byte, uint, error) {
 	case v > 255:
 		b = append(b, byte(TYPE_ULONG))
 
-		var vb []byte
-		binary.BigEndian.PutUint64(vb, v)
-		b = append(b, vb...)
+		byteVal := make([]byte, TYPE_SIZE_8)
+		binary.BigEndian.PutUint64(byteVal, v)
+		b = append(b, byteVal...)
 
 	case v < 256:
 		b = append(b, []byte{ byte(TYPE_ULONG_SMALL),  byte(v) }...)

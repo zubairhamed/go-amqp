@@ -7,6 +7,13 @@ import (
 type Type byte
 
 const (
+	TYPE_SIZE_1 = byte(1)
+	TYPE_SIZE_2 = byte(2)
+	TYPE_SIZE_4 = byte(4)
+	TYPE_SIZE_8 = byte(8)
+)
+
+const (
 	TYPE_CONSTRUCTOR = Type(0x00)
 
 	TYPE_PERFORMATIVE_OPEN = Type(0x10)

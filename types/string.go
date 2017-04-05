@@ -5,6 +5,25 @@ import (
 	"errors"
 )
 
+func NewString(v string) *String {
+	return &String{
+		value: v,
+	}
+}
+
+type String struct {
+	BaseAMQPType
+	value string
+}
+
+func (s *String) Value() string {
+	return s.value
+}
+
+func (s *String) Encode() ([]byte, uint, error) {
+	return EncodeStringField(s)
+}
+
 func DecodeStringField(v []byte) (val *String, fieldLength uint, err error) {
 
 	ctor := Type(v[0])
@@ -58,32 +77,12 @@ func EncodeStringField(s *String) ([]byte, uint, error) {
 	case vlen > 255 && vlen < 4294967295:
 		b = append(b, byte(TYPE_STRING_32_UTF8))
 
-		byteVal := make([]byte, 2)
-		binary.BigEndian.PutUint16(byteVal, uint16(vlen))
+		byteVal := make([]byte, TYPE_SIZE_4)
+		binary.BigEndian.PutUint32(byteVal, uint32(vlen))
 		b = append(b, byteVal...)
 	}
 
 	b = append(b, []byte(v)...)
 
 	return b, uint(len(b)), nil
-}
-
-
-func NewString(v string) *String {
-	return &String{
-		value: v,
-	}
-}
-
-type String struct {
-	BaseAMQPType
-	value string
-}
-
-func (s *String) Value() string {
-	return s.value
-}
-
-func (s *String) Encode() ([]byte, uint, error) {
-	return EncodeStringField(s)
 }
