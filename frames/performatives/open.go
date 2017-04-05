@@ -1,15 +1,13 @@
-package amqp
+package performatives
 
 import (
 	"encoding/binary"
 	"errors"
 	"log"
+	. "github.com/zubairhamed/go-amqp/types"
+	. "github.com/zubairhamed/go-amqp/frames"
 )
 
-type Performative interface {
-	Encode() ([]byte, error)
-	Decode([]byte) error
-}
 
 func NewOpenPerformative(containerId, hostname string) *PerformativeOpen {
 	return &PerformativeOpen{
@@ -82,18 +80,19 @@ func (p *PerformativeOpen) Encode() ([]byte, error) {
 }
 
 func (p *PerformativeOpen) Decode(b []byte) (err error) {
+	log.Println("Decode Performative Open", b)
 	f, err := UnmarshalFrameHeader(b)
 	if err != nil {
 		return
 	}
 
-	doff := f.dataOffset
-	if uint32(len(b)) < f.size {
+	doff := f.DataOffset
+	if uint32(len(b)) < f.Size {
 		err = errors.New("Malformed frame. Invalid size")
 		return
 	}
 
-	frameBytes := b[doff*4 : f.size]
+	frameBytes := b[doff*4 : f.Size]
 
 	if Type(frameBytes[0]) != TYPE_CONSTRUCTOR {
 		err = errors.New("Malformed or unexpected frame. Expecting constructor.")
@@ -112,13 +111,11 @@ func (p *PerformativeOpen) Decode(b []byte) (err error) {
 
 	if Type(frameBytes[3]) != TYPE_LIST_8 {
 		err = errors.New("Malformed or unexpected frame. Expecting list 8")
-		log.Print(frameBytes[4])
 		return
 	}
 
 	listBytes := int(frameBytes[4])
-	listCount := frameBytes[5]
-	log.Print("List Count", listCount)
+	// listCount := frameBytes[5]
 	frameData := frameBytes[6:]
 
 	if len(frameData)+1 != listBytes {
@@ -130,111 +127,80 @@ func (p *PerformativeOpen) Decode(b []byte) (err error) {
 	var fieldSize uint
 
 	// container-id
-	p.ContainerId, fieldSize, err = GetStringField(remainingBytes)
+	p.ContainerId, fieldSize, err = DecodeStringField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	// hostname
-	p.Hostname, fieldSize, err = GetStringField(remainingBytes)
+	p.Hostname, fieldSize, err = DecodeStringField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	// max-frame-size
-	p.MaxFrameSize, fieldSize, err = GetUIntField(remainingBytes)
+	p.MaxFrameSize, fieldSize, err = DecodeUIntField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	// channel-max
-	p.ChannelMax, fieldSize, err = GetUShortField(remainingBytes)
+	p.ChannelMax, fieldSize, err = DecodeUShortField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	// idle-time-out
-	p.IdleTimeout, fieldSize, err = GetUIntField(remainingBytes)
+	p.IdleTimeout, fieldSize, err = DecodeUIntField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	// outgoing-locales
-	p.OutgoingLocales, fieldSize, err = GetSymbolArrayField(remainingBytes)
+	p.OutgoingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	// incoming-locales
-	p.IncomingLocales, fieldSize, err = GetSymbolArrayField(remainingBytes)
+	p.IncomingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	// offered-capabilities
-	p.OfferedCapabilities, fieldSize, err = GetSymbolArrayField(remainingBytes)
+	p.OfferedCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	// desired-capabiliites
-	p.DesiredCapabilities, fieldSize, err = GetSymbolArrayField(remainingBytes)
+	p.DesiredCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	// properties
-	p.Properties, fieldSize, err = GetMapField(remainingBytes)
+	p.Properties, fieldSize, err = DecodeMapField(remainingBytes)
 	if err != nil {
 		return
 	}
 	remainingBytes = remainingBytes[fieldSize:]
 
 	if len(remainingBytes) > 0 {
-		log.Println("left", len(remainingBytes))
 		log.Fatal("There should not be any bytes left")
 	}
 
 	log.Println("Completed parsing frame")
-
-	return
-}
-
-func UnmarshalFrameHeader(b []byte) (f *FrameHeader, err error) {
-	bLen := len(b)
-	if bLen < MINIMUM_FRAME_SIZE {
-		err = errors.New("Malformed frame. Invalid frame size")
-		return
-	}
-
-	log.Println(b)
-
-	sz := binary.BigEndian.Uint32(b[:4])
-
-	doff := b[4]
-	if doff < 2 {
-		err = errors.New("Malformed frame. Data offset less than 2")
-		return
-	}
-
-	var ft FrameType
-	ftByte := b[5]
-	if ftByte == 0 {
-		ft = FrameTypeAmqp
-	} else {
-		ft = FrameTypeSasl
-	}
-
-	f = NewFrameHeader(doff, ft, 0, sz)
 
 	return
 }

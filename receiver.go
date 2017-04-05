@@ -1,13 +1,13 @@
 package amqp
 
-type FnReceiveMessage func()
 type Receiver struct {
+	session *Session
 }
 
-func (r *Receiver) Receive() {
-
+func (r *Receiver) Receive() *Message {
+	return nil
 }
 
-func (r *Receiver) OnReceive(fn FnReceiveMessage) {
+func (r *Receiver) Close() {
 
 }

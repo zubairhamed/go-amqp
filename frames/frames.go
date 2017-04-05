@@ -1,6 +1,16 @@
-package amqp
+package frames
 
-import "errors"
+import (
+	"errors"
+	"encoding/binary"
+)
+
+const MINIMUM_FRAME_SIZE = 8
+type FrameType byte
+const (
+	FrameTypeAmqp = FrameType(0x00)
+	FrameTypeSasl = FrameType(0x01)
+)
 
 type Frame struct {
 	header    *FrameHeader
@@ -11,19 +21,19 @@ type Frame struct {
 func NewFrameHeader(d uint8, f FrameType, c uint16, s uint32) *FrameHeader {
 	fh := &FrameHeader{}
 
-	fh.channel = c
-	fh.dataOffset = d
-	fh.frameType = f
-	fh.size = s
+	fh.Channel = c
+	fh.DataOffset = d
+	fh.FrameType = f
+	fh.Size = s
 
 	return fh
 }
 
 type FrameHeader struct {
-	dataOffset uint8
-	frameType  FrameType
-	channel    uint16
-	size       uint32
+	DataOffset uint8
+	FrameType  FrameType
+	Channel    uint16
+	Size       uint32
 }
 
 func (h *FrameHeader) GetSize() (sz uint32, err error) {
@@ -86,4 +96,32 @@ type ProtocolHeader struct {
 }
 
 type AMQPFrame struct {
+}
+
+func UnmarshalFrameHeader(b []byte) (f *FrameHeader, err error) {
+	bLen := len(b)
+	if bLen < MINIMUM_FRAME_SIZE {
+		err = errors.New("Malformed frame. Invalid frame size")
+		return
+	}
+
+	sz := binary.BigEndian.Uint32(b[:4])
+
+	doff := b[4]
+	if doff < 2 {
+		err = errors.New("Malformed frame. Data offset less than 2")
+		return
+	}
+
+	var ft FrameType
+	ftByte := b[5]
+	if ftByte == 0 {
+		ft = FrameTypeAmqp
+	} else {
+		ft = FrameTypeSasl
+	}
+
+	f = NewFrameHeader(doff, ft, 0, sz)
+
+	return
 }

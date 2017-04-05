@@ -1,28 +1,29 @@
 package amqp
 
 import (
+	"net"
 	"bufio"
 	"log"
-	"net"
 	. "github.com/zubairhamed/go-amqp/frames"
 	. "github.com/zubairhamed/go-amqp/frames/performatives"
 )
 
-func NewContainer(network string) *Container {
-	c := &Container{
-		network: network,
+func NewConnection(url string) *Connection {
+	return &Connection{
+		url: url,
+		connected: false,
 	}
-
-	return c
 }
 
-type Container struct {
-	network string
+type Connection struct {
+	netConn net.Conn
+	url string
+	connected bool
 }
 
-func (c *Container) doConnect() (conn net.Conn) {
+func (c *Connection) doConnect() (err error) {
 	// Connect
-	conn, err := net.Dial("tcp", c.network)
+	conn, err := net.Dial("tcp", c.url)
 	if err != nil {
 		panic(err)
 	}
@@ -58,8 +59,15 @@ func (c *Container) doConnect() (conn net.Conn) {
 
 	log.Println("Protocol Negotiation OK")
 
-	// >> Open
-	// << Open
+	beginPerformative := NewBeginPerformative()
+
+	_, err = SendPerformative(conn, beginPerformative)
+	err = beginPerformative.Decode(readBuf)
+	if err != nil {
+		log.Panic(err)
+		return
+	}
+
 
 	// >> Begin
 	// << Begin
@@ -69,21 +77,11 @@ func (c *Container) doConnect() (conn net.Conn) {
 
 	// << Flow
 
+	c.connected = true
+
 	return
 }
 
-func (c *Container) Connect() *Connection {
-	conn := c.doConnect()
-
-	return &Connection{
-		netConn: conn,
-	}
-}
-
-func (c *Container) Send(msg *Message) {
-	log.Println("Send", msg)
-}
-
-func (c *Container) Shutdown() {
+func (c *Connection) Close() {
 
 }
