@@ -9,15 +9,22 @@ type Symbol struct {
 	value string
 }
 
+func (s *Symbol) Encode() ([]byte, uint, error) {
+	if s == nil {
+		return []byte { byte(TYPE_NULL) }, 1, nil
+	}
+	return EncodeSymbolField(s)
+}
+
+func EncodeSymbolField(s *Symbol) ([]byte, uint, error) {
+	return nil, 0, nil
+}
+
 func DecodeSymbolField(v []byte) (val *Symbol, fieldLength uint, err error) {
 	ctor := Type(v[0])
 
 	if ctor == TYPE_NULL {
-		val = &Symbol{
-			BaseAMQPType: BaseAMQPType{
-				encoding: ctor,
-			},
-		}
+		val = &Symbol{}
 		fieldLength = 1
 		return
 	}
@@ -28,6 +35,10 @@ func DecodeSymbolField(v []byte) (val *Symbol, fieldLength uint, err error) {
 	}
 
 	return
+}
+
+func EncodeSymbolArrayField(v []*Symbol) (enc []byte, l uint, err error) {
+	return nil, 0, nil
 }
 
 func DecodeSymbolArrayField(v []byte) (val []*Symbol, fieldLength uint, err error) {

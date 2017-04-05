@@ -72,35 +72,9 @@ const (
 	TYPE_ARRAY_32 = Type(0xf0)
 )
 
-type TypeEncoding byte
-
-const (
-	TYPEENCODING_NONE       = TypeEncoding(0)
-	TYPEENCODING_TRUE       = TypeEncoding(1)
-	TYPEENCODING_FALSE      = TypeEncoding(2)
-	TYPEENCODING_SMALLUINT  = TypeEncoding(3)
-	TYPEENCODING_UINT0      = TypeEncoding(4)
-	TYPEENCODING_SMALLULONG = TypeEncoding(5)
-	TYPEENCODING_ULONG0     = TypeEncoding(6)
-	TYPEENCODING_SMALLINT   = TypeEncoding(7)
-	TYPEENCODING_SMALLLONG  = TypeEncoding(8)
-	TYPEENCODING_IEEE_754   = TypeEncoding(9)
-	TYPEENCODING_UTF32      = TypeEncoding(10)
-	TYPEENCODING_MS64       = TypeEncoding(11)
-	TYPEENCODING_VBIN8      = TypeEncoding(12)
-	TYPEENCODING_VBIN32     = TypeEncoding(13)
-	TYPEENCODING_STR8_UTF8  = TypeEncoding(14)
-	TYPEENCODING_STR32_UTF8 = TypeEncoding(15)
-	TYPEENCODING_SYM8       = TypeEncoding(16)
-	TYPEENCODING_SYM32      = TypeEncoding(17)
-	TYPEENCODING_LIST0      = TypeEncoding(18)
-	TYPEENCODING_LIST8      = TypeEncoding(19)
-	TYPEENCODING_LIST32     = TypeEncoding(20)
-	TYPEENCODING_MAP8       = TypeEncoding(21)
-	TYPEENCODING_MAP32      = TypeEncoding(22)
-	TYPEENCODING_ARRAY8     = TypeEncoding(23)
-	TYPEENCODING_ARRAY32    = TypeEncoding(24)
-)
+func EncodeField(t AMQPType) (b []byte, l uint, err error) {
+	return t.Encode()
+}
 
 func DecodeField(v []byte) (AMQPType, uint, error) {
 	ctor := Type(v[0])
@@ -116,15 +90,12 @@ func DecodeField(v []byte) (AMQPType, uint, error) {
 	return nil, 0, errors.New("Unknown field found")
 }
 
-
 type AMQPType interface {
-	GetEncoding() TypeEncoding
+	// GetType() Type
+
+	Encode() ([]byte, uint, error)
 }
 
 type BaseAMQPType struct {
 	encoding Type
-}
-
-func (b *BaseAMQPType) GetEncoding() TypeEncoding {
-	return TYPEENCODING_NONE
 }

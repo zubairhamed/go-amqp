@@ -63,20 +63,85 @@ func (p *PerformativeBegin) Decode(b []byte) (err error) {
 
 	log.Println("Type Performative",  Type(frameBytes[2]))
 	if Type(frameBytes[2]) != TYPE_PERFORMATIVE_BEGIN {
-		err = errors.New("Malformed or unexpected frame. Expecting Open Performative.")
+		err = errors.New("Malformed or unexpected frame. Expecting Begin Performative.")
+		log.Println(frameBytes[2])
 		return
 	}
 
 	return
 }
 
-func (p *PerformativeBegin) Encode() ([]byte, error) {
+func (p *PerformativeBegin) Encode() (enc []byte, err error) {
+	var bodyFieldBytes []byte = []byte{}
+	var bodyFieldLength uint = 0
+	var encField []byte
+	var fieldLen uint
+
+	encField, fieldLen, err = EncodeField(p.RemoteChannel)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.NextOutgoingId)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.IncomingWindow)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.OutgoingWindow)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.HandleMax)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeSymbolArrayField(p.OfferedCapabilities)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeSymbolArrayField(p.DesiredCapabilities)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.Properties)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
 
 	performativeBytes := []byte{
 		0x00,
 		0x53,
 		0x11,
+		0xC0,
+		byte(bodyFieldLength),
 	}
+
+	performativeBytes = append(performativeBytes, bodyFieldBytes...)
 
 	return performativeBytes, nil
 }

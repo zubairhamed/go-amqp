@@ -26,11 +26,12 @@ func main() {
 	outMsg := amqp.NewMessage()
 	sender.Send(outMsg)
 
-	inMsg := receiver.Receive();
-	log.Println(inMsg);
-	receiver.Close();
-	sender.Close();
-	session.Close();
-	conn.Close();
+	inMsg := receiver.Receive()
+	log.Println(inMsg)
+	receiver.Close()
+	sender.Close()
+	session.Close()
+	conn.Close()
+
 	<-make(chan struct{})
 }

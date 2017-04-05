@@ -1,7 +1,6 @@
 package performatives
 
 import (
-	"encoding/binary"
 	"errors"
 	"log"
 	. "github.com/zubairhamed/go-amqp/types"
@@ -45,38 +44,127 @@ type PerformativeOpen struct {
 	Properties          *Map
 }
 
-func (p *PerformativeOpen) Encode() ([]byte, error) {
-	fieldContainerBytes := append([]byte{0xA1, byte(len(p.ContainerId.Value()))}, []byte(p.ContainerId.Value())...)
-	fieldHostnameBytes := append([]byte{0xA1, byte(len(p.Hostname.Value()))}, []byte(p.Hostname.Value())...)
-	fieldOtherFieldsBytes := []byte{0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40}
+func (p *PerformativeOpen) Encode() (enc []byte, err error) {
+	var bodyFieldBytes []byte = []byte{}
+	var bodyFieldLength uint = 0
+	var encField []byte
+	var fieldLen uint
 
-	performativeFieldSize := 1 + len(fieldContainerBytes) + len(fieldHostnameBytes) + len(fieldOtherFieldsBytes)
+	encField, fieldLen, err = EncodeField(p.ContainerId)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.Hostname)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.MaxFrameSize)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.ChannelMax)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.IdleTimeout)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeSymbolArrayField(p.OutgoingLocales)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeSymbolArrayField(p.IncomingLocales)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeSymbolArrayField(p.OfferedCapabilities)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeSymbolArrayField(p.DesiredCapabilities)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
+
+	encField, fieldLen, err = EncodeField(p.Properties)
+	if err != nil {
+		return
+	}
+	bodyFieldLength += fieldLen
+	bodyFieldBytes = append(bodyFieldBytes, encField... )
 
 	performativeBytes := []byte{
 		0x00,
 		0x53,
 		0x10,
 		0xC0,
-		byte(performativeFieldSize),
-		0x0A,
+		byte(bodyFieldLength),
 	}
 
-	performativeBytes = append(performativeBytes, fieldContainerBytes...)
-	performativeBytes = append(performativeBytes, fieldHostnameBytes...)
-	performativeBytes = append(performativeBytes, fieldOtherFieldsBytes...)
+	performativeBytes = append(performativeBytes, bodyFieldBytes...)
 
-	frameSize := uint32(8 + len(performativeBytes))
-	frameSizeBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(frameSizeBytes, frameSize)
+	log.Println("Encoded Open Performative", performativeBytes)
 
-	out := []byte{}
+	return performativeBytes, nil
 
-	// Header
-	out = append(out, frameSizeBytes...)
-	out = append(out, byte(0x02), byte(0x00), byte(0x00), byte(0x00))
-	out = append(out, performativeBytes...)
-
-	return out, nil
+	//fieldContainerBytes := append([]byte{0xA1, byte(len(p.ContainerId.Value()))}, []byte(p.ContainerId.Value())...)
+	//fieldHostnameBytes := append([]byte{0xA1, byte(len(p.Hostname.Value()))}, []byte(p.Hostname.Value())...)
+	//fieldOtherFieldsBytes := []byte{0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40}
+	//
+	//performativeFieldSize := 1 + len(fieldContainerBytes) + len(fieldHostnameBytes) + len(fieldOtherFieldsBytes)
+	//
+	//performativeBytes := []byte{
+	//	0x00,
+	//	0x53,
+	//	0x10,
+	//	0xC0,
+	//	byte(performativeFieldSize),
+	//	0x0A,
+	//}
+	//
+	//performativeBytes = append(performativeBytes, fieldContainerBytes...)
+	//performativeBytes = append(performativeBytes, fieldHostnameBytes...)
+	//performativeBytes = append(performativeBytes, fieldOtherFieldsBytes...)
+	//
+	//frameSize := uint32(8 + len(performativeBytes))
+	//frameSizeBytes := make([]byte, 4)
+	//binary.BigEndian.PutUint32(frameSizeBytes, frameSize)
+	//
+	//out := []byte{}
+	//
+	//// Header
+	//out = append(out, frameSizeBytes...)
+	//out = append(out, byte(0x02), byte(0x00), byte(0x00), byte(0x00))
+	//out = append(out, performativeBytes...)
+	//
+	//return out, nil
 }
 
 func (p *PerformativeOpen) Decode(b []byte) (err error) {

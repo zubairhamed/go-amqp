@@ -14,6 +14,14 @@ func (m *Map) Put(k string, v AMQPType) {
 	m.values[k] = v
 }
 
+func (s *Map) Encode() ([]byte, uint, error) {
+	return EncodeMapField(s)
+}
+
+func EncodeMapField(s *Map) ([]byte, uint, error) {
+	return nil, 0, nil
+}
+
 func DecodeMapField(v []byte) (val *Map, fieldLength uint, err error) {
 	ctor := Type(v[0])
 	if ctor != TYPE_MAP_8 && ctor != TYPE_MAP_32 {
@@ -55,6 +63,10 @@ func DecodeMapField(v []byte) (val *Map, fieldLength uint, err error) {
 
 type KeyValue struct {
 	BaseAMQPType
+}
+
+func EncodeKeyValueField(s *Symbol) ([]byte, uint, error) {
+	return nil, 0, nil
 }
 
 func DecodeKeyValueField(v []byte) (key string, val AMQPType, fieldLength uint, err error) {

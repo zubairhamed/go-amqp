@@ -10,11 +10,7 @@ func DecodeStringField(v []byte) (val *String, fieldLength uint, err error) {
 	ctor := Type(v[0])
 
 	if ctor == TYPE_NULL {
-		val = &String{
-			BaseAMQPType: BaseAMQPType{
-				encoding: TYPE_NULL,
-			},
-		}
+		val = &String{}
 		fieldLength = 1
 		return
 	}
@@ -39,13 +35,39 @@ func DecodeStringField(v []byte) (val *String, fieldLength uint, err error) {
 
 	val = &String{
 		value: string(strValue),
-		BaseAMQPType: BaseAMQPType{
-			encoding: ctor,
-		},
 	}
 
 	return
 }
+
+func EncodeStringField(s *String) ([]byte, uint, error) {
+	if s == nil {
+		return []byte { byte(TYPE_NULL) }, 1, nil
+	}
+
+	v := s.value
+	b := []byte{}
+
+	vlen := len(v)
+
+	switch {
+	case vlen == 0 || vlen < 256:
+		b = append(b, byte(TYPE_STRING_8_UTF8))
+		b = append(b, byte(vlen))
+
+	case vlen > 255 && vlen < 4294967295:
+		b = append(b, byte(TYPE_STRING_32_UTF8))
+
+		byteVal := make([]byte, 2)
+		binary.BigEndian.PutUint16(byteVal, uint16(vlen))
+		b = append(b, byteVal...)
+	}
+
+	b = append(b, []byte(v)...)
+
+	return b, uint(len(b)), nil
+}
+
 
 func NewString(v string) *String {
 	return &String{
@@ -60,4 +82,8 @@ type String struct {
 
 func (s *String) Value() string {
 	return s.value
+}
+
+func (s *String) Encode() ([]byte, uint, error) {
+	return EncodeStringField(s)
 }

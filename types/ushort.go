@@ -16,9 +16,20 @@ func DecodeUShortField(v []byte) (val *UShort, fieldLength uint, err error) {
 	val = &UShort{
 		value: binary.BigEndian.Uint16(v[1:3]),
 	}
-
 	return
-	// 0x60
+}
+
+func EncodeUShortField(s *UShort) (b []byte, l uint, err error) {
+	b = []byte {
+		byte(TYPE_USHORT),
+		0x02,
+	}
+
+	var byteVal []byte
+	binary.BigEndian.PutUint16(byteVal, s.value)
+	b = append(b, byteVal...)
+
+	return b, uint(len(b)), nil
 }
 
 type UShort struct {
@@ -26,4 +37,14 @@ type UShort struct {
 	value uint16
 }
 
+func (s *UShort) Encode() ([]byte, uint, error) {
+	if s == nil {
+		return []byte { byte(TYPE_NULL) }, 1, nil
+	}
+	return EncodeUShortField(s)
+}
+
+func (b *UShort) GetType() Type {
+	return TYPE_USHORT
+}
 

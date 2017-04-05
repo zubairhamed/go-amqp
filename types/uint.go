@@ -10,6 +10,17 @@ type UInt struct {
 	value uint32
 }
 
+func (s *UInt) Encode() ([]byte, uint, error) {
+	if s == nil {
+		return []byte { byte(TYPE_NULL) }, 1, nil
+	}
+	return EncodeUIntField(s)
+}
+
+func EncodeUIntField(s *UInt) ([]byte, uint, error) {
+	return nil, 0, nil
+}
+
 func DecodeUIntField(v []byte) (val *UInt, fieldLength uint, err error) {
 	ctor := Type(v[0])
 	if ctor != TYPE_UINT && ctor != TYPE_UINT_0 && ctor != TYPE_UINT_SMALL {
@@ -38,9 +49,6 @@ func DecodeUIntField(v []byte) (val *UInt, fieldLength uint, err error) {
 
 	val = &UInt{
 		value: fieldValue,
-		BaseAMQPType: BaseAMQPType{
-			encoding: ctor,
-		},
 	}
 	return
 }

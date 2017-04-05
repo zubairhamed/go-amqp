@@ -1,6 +1,9 @@
 package performatives
 
-import "net"
+import (
+	"net"
+	"log"
+)
 
 type Performative interface {
 	Encode() ([]byte, error)
@@ -10,6 +13,8 @@ type Performative interface {
 
 func SendPerformative(c net.Conn, p Performative) (int, error) {
 	b, err := p.Encode()
+
+	log.Println("Send Performative data", b)
 	if err != nil {
 		panic(err.Error())
 	}
