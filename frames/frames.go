@@ -3,6 +3,8 @@ package frames
 import (
 	"errors"
 	"encoding/binary"
+	"net"
+	"bytes"
 )
 
 const MINIMUM_FRAME_SIZE = 8
@@ -124,4 +126,32 @@ func UnmarshalFrameHeader(b []byte) (f *FrameHeader, err error) {
 	f = NewFrameHeader(doff, ft, 0, sz)
 
 	return
+}
+
+func EncodeFrame(b []byte) (fb []byte) {
+	var frameSize uint32 = 8 + uint32(len(b))
+	var frameSizeBytes = make([]byte, 4)
+	binary.BigEndian.PutUint32(frameSizeBytes, frameSize)
+
+	frameContent := []byte { }
+	frameContent = append(frameContent, frameSizeBytes...)
+	frameContent = append(frameContent, []byte { 0x02, 0x00, 0x00, 0x00 }... )
+	frameContent = append(frameContent, b...)
+
+	return frameContent
+}
+
+
+var HANDSHAKE_MSG = []byte { 0x41, 0x4d, 0x51, 0x50, 0x00, 0x01, 0x00, 0x00  }
+func SendHandshake(c net.Conn) (int, error) {
+	c.Write(HANDSHAKE_MSG)
+
+	return 0, nil
+}
+
+func HandleHandshake(b []byte) error {
+	if !bytes.Equal(b[0:8], HANDSHAKE_MSG) {
+		return errors.New("Invalid handshake message")
+	}
+	return nil
 }

@@ -7,6 +7,11 @@ import (
 
 func DecodeUShortField(v []byte) (val *UShort, fieldLength uint, err error) {
 	ctor := Type(v[0])
+	if ctor == TYPE_NULL {
+		fieldLength = 1
+		return
+	}
+
 	if ctor != TYPE_USHORT {
 		err = errors.New("Malformed error. Expecting ushort field")
 		return

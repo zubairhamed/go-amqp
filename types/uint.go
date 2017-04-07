@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/binary"
 	"errors"
+	"log"
 )
 
 func NewUInt(v uint32) *UInt {
@@ -51,7 +52,13 @@ func EncodeUIntField(s *UInt) ([]byte, uint, error) {
 }
 
 func DecodeUIntField(v []byte) (val *UInt, fieldLength uint, err error) {
+	log.Println("Decoding UInt", v)
 	ctor := Type(v[0])
+	if ctor == TYPE_NULL {
+		fieldLength = 1
+		return
+	}
+
 	if ctor != TYPE_UINT && ctor != TYPE_UINT_0 && ctor != TYPE_UINT_SMALL {
 		err = errors.New("Malformed error. Expecting uint field")
 		return

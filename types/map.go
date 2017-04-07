@@ -19,11 +19,20 @@ func (s *Map) Encode() ([]byte, uint, error) {
 }
 
 func EncodeMapField(s *Map) ([]byte, uint, error) {
+	if s == nil {
+		return []byte { byte(TYPE_NULL) }, 1, nil
+	}
+
 	return nil, 0, nil
 }
 
 func DecodeMapField(v []byte) (val *Map, fieldLength uint, err error) {
 	ctor := Type(v[0])
+	if ctor == TYPE_NULL {
+		fieldLength = 1
+		return
+	}
+
 	if ctor != TYPE_MAP_8 && ctor != TYPE_MAP_32 {
 		err = errors.New("Malformed error. Expecting map field")
 		return

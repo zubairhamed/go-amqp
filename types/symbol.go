@@ -69,6 +69,10 @@ func DecodeSymbolField(v []byte) (val *Symbol, fieldLength uint, err error) {
 }
 
 func EncodeSymbolArrayField(v []*Symbol) (enc []byte, l uint, err error) {
+	if len(v) == 0 {
+		return []byte { byte(TYPE_NULL) }, 1, nil
+	}
+
 	return nil, 0, nil
 }
 

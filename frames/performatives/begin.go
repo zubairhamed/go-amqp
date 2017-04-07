@@ -2,7 +2,6 @@ package performatives
 
 import (
 	"errors"
-	"log"
 	. "github.com/zubairhamed/go-amqp/types"
 	. "github.com/zubairhamed/go-amqp/frames"
 )
@@ -33,42 +32,6 @@ type PerformativeBegin struct {
 	OfferedCapabilities []*Symbol
 	DesiredCapabilities []*Symbol
 	Properties          *Map
-}
-
-func (p *PerformativeBegin) Decode(b []byte) (err error) {
-	log.Println("PerformativeBegin bytes", b)
-
-	f, err := UnmarshalFrameHeader(b)
-	if err != nil {
-		return
-	}
-
-	doff := f.DataOffset
-	if uint32(len(b)) < f.Size {
-		err = errors.New("Malformed frame. Invalid size")
-		return
-	}
-
-	frameBytes := b[doff*4 : f.Size]
-
-	if Type(frameBytes[0]) != TYPE_CONSTRUCTOR {
-		err = errors.New("Malformed or unexpected frame. Expecting constructor.")
-		return
-	}
-
-	if Type(frameBytes[1]) != TYPE_ULONG_SMALL {
-		err = errors.New("Malformed or unexpected frame. Expecting small ulong type")
-		return
-	}
-
-	log.Println("Type Performative",  Type(frameBytes[2]))
-	if Type(frameBytes[2]) != TYPE_PERFORMATIVE_BEGIN {
-		err = errors.New("Malformed or unexpected frame. Expecting Begin Performative.")
-		log.Println(frameBytes[2])
-		return
-	}
-
-	return
 }
 
 func (p *PerformativeBegin) Encode() (enc []byte, err error) {
@@ -136,9 +99,10 @@ func (p *PerformativeBegin) Encode() (enc []byte, err error) {
 	performativeBytes := []byte{
 		0x00,
 		0x53,
-		0x11,
+		byte(TYPE_PERFORMATIVE_BEGIN),
 		0xC0,
 		byte(bodyFieldLength),
+		0x08,
 	}
 
 	performativeBytes = append(performativeBytes, bodyFieldBytes...)
@@ -146,37 +110,135 @@ func (p *PerformativeBegin) Encode() (enc []byte, err error) {
 	return performativeBytes, nil
 }
 
-/*
-fieldContainerBytes := append([]byte{0xA1, byte(len(p.ContainerId.Value()))}, []byte(p.ContainerId.Value())...)
-	fieldHostnameBytes := append([]byte{0xA1, byte(len(p.Hostname.Value()))}, []byte(p.Hostname.Value())...)
-	fieldOtherFieldsBytes := []byte{0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40}
+func DecodeBeginPerformative(b []byte) (op *PerformativeBegin, err error) {
+	op = NewBeginPerformative()
 
-	performativeFieldSize := 1 + len(fieldContainerBytes) + len(fieldHostnameBytes) + len(fieldOtherFieldsBytes)
-	performativeBytes := []byte{
-		0x00,
-		0x53,
-		0x10,
-		0xC0,
-		byte(performativeFieldSize),
-		0x0A,
+	f, err := UnmarshalFrameHeader(b)
+	if err != nil {
+		return
 	}
 
-	performativeBytes = append(performativeBytes, fieldContainerBytes...)
-	performativeBytes = append(performativeBytes, fieldHostnameBytes...)
-	performativeBytes = append(performativeBytes, fieldOtherFieldsBytes...)
+	doff := f.DataOffset
+	if uint32(len(b)) < f.Size {
+		err = errors.New("Malformed frame. Invalid size")
+		return
+	}
 
-	frameSize := uint32(8 + len(performativeBytes))
-	frameSizeBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(frameSizeBytes, frameSize)
+	frameBytes := b[doff*4 : f.Size]
 
-	out := []byte{}
+	if Type(frameBytes[0]) != TYPE_CONSTRUCTOR {
+		err = errors.New("Malformed or unexpected frame. Expecting constructor.")
+		return
+	}
 
-	// Header
-	out = append(out, frameSizeBytes...)
-	out = append(out, byte(0x02), byte(0x00), byte(0x00), byte(0x00))
-	out = append(out, performativeBytes...)
+	if Type(frameBytes[1]) != TYPE_ULONG_SMALL {
+		err = errors.New("Malformed or unexpected frame. Expecting small ulong type")
+		return
+	}
 
-	return out, nil
- */
+	if Type(frameBytes[2]) != TYPE_PERFORMATIVE_BEGIN {
+		err = errors.New("Malformed or unexpected frame. Expecting Begin Performative.")
+		return
+	}
+
+	if Type(frameBytes[3]) != TYPE_LIST_8 {
+		err = errors.New("Malformed or unexpected frame. Expecting list 8")
+		return
+	}
+
+	listBytes := int(frameBytes[4])
+	listCount := frameBytes[5]
+	if listCount > 8 {
+		err = errors.New("Invalid list count. Expecting 8 or less.")
+		return
+	}
+
+	frameData := frameBytes[6:]
+
+	if len(frameData)+1 != listBytes {
+		err = errors.New("Malformed or unexpected frame. list size not equal or expected")
+		return
+	}
+	remainingBytes := frameData
+
+	var fieldSize uint
+
+	if listCount  > 0 {
+		// remote-channel
+		op.RemoteChannel, fieldSize, err = DecodeUShortField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 1 {
+		// next-outgoing-id
+		op.NextOutgoingId, fieldSize, err = DecodeUIntField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 2 {
+		// incoming-window
+		op.IncomingWindow, fieldSize, err = DecodeUIntField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 3 {
+		// outgoing-window
+		op.OutgoingWindow, fieldSize, err = DecodeUIntField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 4 {
+		// handle-max
+		op.HandleMax, fieldSize, err = DecodeUIntField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 5 {
+		// offered-capabilities
+		op.OfferedCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 6 {
+		// desired-capabilities
+		op.DesiredCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 7 {
+		// properties
+		op.Properties, fieldSize, err = DecodeMapField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if len(remainingBytes) > 0 {
+		err = errors.New("There should not be any bytes left")
+	}
+	return
+}
 
 

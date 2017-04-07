@@ -2,17 +2,13 @@ package performatives
 
 import (
 	"errors"
-	"log"
 	. "github.com/zubairhamed/go-amqp/types"
-	. "github.com/zubairhamed/go-amqp/frames"
+	"github.com/zubairhamed/go-amqp/frames"
 )
 
 
-func NewOpenPerformative(containerId, hostname string) *PerformativeOpen {
-	return &PerformativeOpen{
-		ContainerId: NewString(containerId),
-		Hostname:    NewString(hostname),
-	}
+func NewOpenPerformative() *PerformativeOpen {
+	return &PerformativeOpen{}
 }
 
 /*
@@ -121,55 +117,23 @@ func (p *PerformativeOpen) Encode() (enc []byte, err error) {
 	bodyFieldBytes = append(bodyFieldBytes, encField... )
 
 	performativeBytes := []byte{
-		0x00,
-		0x53,
-		0x10,
-		0xC0,
-		byte(bodyFieldLength),
+		0x00,	// Constructor
+		0x53,	// ulong small
+		0x10,	// performative open
+		0xC0,	// list
+		byte(bodyFieldLength),	// body bytes size
+		0x0A,	// field count
 	}
 
 	performativeBytes = append(performativeBytes, bodyFieldBytes...)
 
-	log.Println("Encoded Open Performative", performativeBytes)
-
 	return performativeBytes, nil
-
-	//fieldContainerBytes := append([]byte{0xA1, byte(len(p.ContainerId.Value()))}, []byte(p.ContainerId.Value())...)
-	//fieldHostnameBytes := append([]byte{0xA1, byte(len(p.Hostname.Value()))}, []byte(p.Hostname.Value())...)
-	//fieldOtherFieldsBytes := []byte{0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40}
-	//
-	//performativeFieldSize := 1 + len(fieldContainerBytes) + len(fieldHostnameBytes) + len(fieldOtherFieldsBytes)
-	//
-	//performativeBytes := []byte{
-	//	0x00,
-	//	0x53,
-	//	0x10,
-	//	0xC0,
-	//	byte(performativeFieldSize),
-	//	0x0A,
-	//}
-	//
-	//performativeBytes = append(performativeBytes, fieldContainerBytes...)
-	//performativeBytes = append(performativeBytes, fieldHostnameBytes...)
-	//performativeBytes = append(performativeBytes, fieldOtherFieldsBytes...)
-	//
-	//frameSize := uint32(8 + len(performativeBytes))
-	//frameSizeBytes := make([]byte, 4)
-	//binary.BigEndian.PutUint32(frameSizeBytes, frameSize)
-	//
-	//out := []byte{}
-	//
-	//// Header
-	//out = append(out, frameSizeBytes...)
-	//out = append(out, byte(0x02), byte(0x00), byte(0x00), byte(0x00))
-	//out = append(out, performativeBytes...)
-	//
-	//return out, nil
 }
 
-func (p *PerformativeOpen) Decode(b []byte) (err error) {
-	log.Println("Decode Performative Open", b)
-	f, err := UnmarshalFrameHeader(b)
+func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
+	op = NewOpenPerformative()
+
+	f, err := frames.UnmarshalFrameHeader(b)
 	if err != nil {
 		return
 	}
@@ -203,7 +167,12 @@ func (p *PerformativeOpen) Decode(b []byte) (err error) {
 	}
 
 	listBytes := int(frameBytes[4])
-	// listCount := frameBytes[5]
+	listCount := frameBytes[5]
+	if listCount > 10 {
+		err = errors.New("Invalid list count. Expecting 10 or less.")
+		return
+	}
+
 	frameData := frameBytes[6:]
 
 	if len(frameData)+1 != listBytes {
@@ -214,81 +183,98 @@ func (p *PerformativeOpen) Decode(b []byte) (err error) {
 
 	var fieldSize uint
 
-	// container-id
-	p.ContainerId, fieldSize, err = DecodeStringField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 0 {
+		// container-id
+		op.ContainerId, fieldSize, err = DecodeStringField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
-	// hostname
-	p.Hostname, fieldSize, err = DecodeStringField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 1 {
+		// hostname
+		op.Hostname, fieldSize, err = DecodeStringField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
-	// max-frame-size
-	p.MaxFrameSize, fieldSize, err = DecodeUIntField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 2 {
+		// max-frame-size
+		op.MaxFrameSize, fieldSize, err = DecodeUIntField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
-	// channel-max
-	p.ChannelMax, fieldSize, err = DecodeUShortField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 3 {
+		// channel-max
+		op.ChannelMax, fieldSize, err = DecodeUShortField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
-	// idle-time-out
-	p.IdleTimeout, fieldSize, err = DecodeUIntField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 4 {
+		// idle-time-out
+		op.IdleTimeout, fieldSize, err = DecodeUIntField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
-	// outgoing-locales
-	p.OutgoingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 5 {
+		// outgoing-locales
+		op.OutgoingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
-	// incoming-locales
-	p.IncomingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 6 {
+		// incoming-locales
+		op.IncomingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
-	// offered-capabilities
-	p.OfferedCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 7 {
+		// offered-capabilities
+		op.OfferedCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
-	// desired-capabiliites
-	p.DesiredCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 8 {
+		// desired-capabiliites
+		op.DesiredCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
-	// properties
-	p.Properties, fieldSize, err = DecodeMapField(remainingBytes)
-	if err != nil {
-		return
+	if listCount  > 9 {
+		// properties
+		op.Properties, fieldSize, err = DecodeMapField(remainingBytes)
+		if err != nil {
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
 	}
-	remainingBytes = remainingBytes[fieldSize:]
 
 	if len(remainingBytes) > 0 {
-		log.Fatal("There should not be any bytes left")
+		err = errors.New("There should not be any bytes left")
 	}
-
-	log.Println("Completed parsing frame")
-
 	return
 }
