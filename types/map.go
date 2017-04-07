@@ -20,7 +20,7 @@ func (s *Map) Encode() ([]byte, uint, error) {
 
 func EncodeMapField(s *Map) ([]byte, uint, error) {
 	if s == nil {
-		return []byte { byte(TYPE_NULL) }, 1, nil
+		return []byte{byte(TYPE_NULL)}, 1, nil
 	}
 
 	return nil, 0, nil

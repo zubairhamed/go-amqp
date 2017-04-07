@@ -7,4 +7,3 @@ const (
 	ProtocolTypeSsl  = ProtocolType(2)
 	ProtocolTypeSasl = ProtocolType(3)
 )
-

@@ -2,10 +2,9 @@ package performatives
 
 import (
 	"errors"
-	. "github.com/zubairhamed/go-amqp/types"
 	"github.com/zubairhamed/go-amqp/frames"
+	. "github.com/zubairhamed/go-amqp/types"
 )
-
 
 func NewOpenPerformative() *PerformativeOpen {
 	return &PerformativeOpen{}
@@ -26,8 +25,8 @@ func NewOpenPerformative() *PerformativeOpen {
     <field name="properties" type="fields"/>
 </type>
 */
-
 type PerformativeOpen struct {
+	BaseAMQPType
 	ContainerId         *String
 	Hostname            *String
 	MaxFrameSize        *UInt
@@ -40,7 +39,7 @@ type PerformativeOpen struct {
 	Properties          *Map
 }
 
-func (p *PerformativeOpen) Encode() (enc []byte, err error) {
+func (p *PerformativeOpen) Encode() (enc []byte, l uint, err error) {
 	var bodyFieldBytes []byte = []byte{}
 	var bodyFieldLength uint = 0
 	var encField []byte
@@ -51,83 +50,87 @@ func (p *PerformativeOpen) Encode() (enc []byte, err error) {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.Hostname)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.MaxFrameSize)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.ChannelMax)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.IdleTimeout)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeSymbolArrayField(p.OutgoingLocales)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeSymbolArrayField(p.IncomingLocales)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeSymbolArrayField(p.OfferedCapabilities)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeSymbolArrayField(p.DesiredCapabilities)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.Properties)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	performativeBytes := []byte{
-		0x00,	// Constructor
-		0x53,	// ulong small
-		0x10,	// performative open
-		0xC0,	// list
-		byte(bodyFieldLength),	// body bytes size
-		0x0A,	// field count
+		0x00, // Constructor
+		0x53, // ulong small
+		0x10, // performative open
+		0xC0, // list
+		byte(bodyFieldLength), // body bytes size
+		0x0A, // field count
 	}
 
 	performativeBytes = append(performativeBytes, bodyFieldBytes...)
 
-	return performativeBytes, nil
+	return performativeBytes, uint(len(performativeBytes)), nil
+}
+
+func (b *PerformativeOpen) GetType() Type {
+	return TYPE_PERFORMATIVE_OPEN
 }
 
 func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
@@ -183,7 +186,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 
 	var fieldSize uint
 
-	if listCount  > 0 {
+	if listCount > 0 {
 		// container-id
 		op.ContainerId, fieldSize, err = DecodeStringField(remainingBytes)
 		if err != nil {
@@ -192,7 +195,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
-	if listCount  > 1 {
+	if listCount > 1 {
 		// hostname
 		op.Hostname, fieldSize, err = DecodeStringField(remainingBytes)
 		if err != nil {
@@ -201,7 +204,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
-	if listCount  > 2 {
+	if listCount > 2 {
 		// max-frame-size
 		op.MaxFrameSize, fieldSize, err = DecodeUIntField(remainingBytes)
 		if err != nil {
@@ -210,7 +213,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
-	if listCount  > 3 {
+	if listCount > 3 {
 		// channel-max
 		op.ChannelMax, fieldSize, err = DecodeUShortField(remainingBytes)
 		if err != nil {
@@ -219,7 +222,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
-	if listCount  > 4 {
+	if listCount > 4 {
 		// idle-time-out
 		op.IdleTimeout, fieldSize, err = DecodeUIntField(remainingBytes)
 		if err != nil {
@@ -228,7 +231,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
-	if listCount  > 5 {
+	if listCount > 5 {
 		// outgoing-locales
 		op.OutgoingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
@@ -237,7 +240,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
-	if listCount  > 6 {
+	if listCount > 6 {
 		// incoming-locales
 		op.IncomingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
@@ -246,7 +249,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
-	if listCount  > 7 {
+	if listCount > 7 {
 		// offered-capabilities
 		op.OfferedCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
@@ -255,7 +258,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
-	if listCount  > 8 {
+	if listCount > 8 {
 		// desired-capabiliites
 		op.DesiredCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
@@ -264,7 +267,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
-	if listCount  > 9 {
+	if listCount > 9 {
 		// properties
 		op.Properties, fieldSize, err = DecodeMapField(remainingBytes)
 		if err != nil {

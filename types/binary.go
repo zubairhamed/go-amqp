@@ -4,4 +4,3 @@ type Binary struct {
 	BaseAMQPType
 	value []byte
 }
-

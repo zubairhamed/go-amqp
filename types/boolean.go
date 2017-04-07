@@ -4,4 +4,3 @@ type Boolean struct {
 	BaseAMQPType
 	value bool
 }
-

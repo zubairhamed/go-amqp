@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/binary"
 	"errors"
-	"log"
 )
 
 func NewUInt(v uint32) *UInt {
@@ -12,7 +11,6 @@ func NewUInt(v uint32) *UInt {
 	}
 }
 
-
 type UInt struct {
 	BaseAMQPType
 	value uint32
@@ -20,14 +18,18 @@ type UInt struct {
 
 func (s *UInt) Encode() ([]byte, uint, error) {
 	if s == nil {
-		return []byte { byte(TYPE_NULL) }, 1, nil
+		return []byte{byte(TYPE_NULL)}, 1, nil
 	}
 	return EncodeUIntField(s)
 }
 
+func (s *UInt) Value() uint32 {
+	return s.value
+}
+
 func EncodeUIntField(s *UInt) ([]byte, uint, error) {
 	if s == nil {
-		return []byte { byte(TYPE_UINT_0) }, 1, nil
+		return []byte{byte(TYPE_UINT_0)}, 1, nil
 	}
 
 	v := s.value
@@ -45,14 +47,13 @@ func EncodeUIntField(s *UInt) ([]byte, uint, error) {
 		b = append(b, byteVal...)
 
 	case v < 256:
-		b = append(b, []byte{ byte(TYPE_UINT_SMALL),  byte(v) }...)
+		b = append(b, []byte{byte(TYPE_UINT_SMALL), byte(v)}...)
 	}
 
 	return b, uint(len(b)), nil
 }
 
 func DecodeUIntField(v []byte) (val *UInt, fieldLength uint, err error) {
-	log.Println("Decoding UInt", v)
 	ctor := Type(v[0])
 	if ctor == TYPE_NULL {
 		fieldLength = 1

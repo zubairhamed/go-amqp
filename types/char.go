@@ -4,4 +4,3 @@ type Char struct {
 	BaseAMQPType
 	value string
 }
-

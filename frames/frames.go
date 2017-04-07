@@ -1,14 +1,16 @@
 package frames
 
 import (
-	"errors"
-	"encoding/binary"
-	"net"
 	"bytes"
+	"encoding/binary"
+	"errors"
+	"net"
 )
 
 const MINIMUM_FRAME_SIZE = 8
+
 type FrameType byte
+
 const (
 	FrameTypeAmqp = FrameType(0x00)
 	FrameTypeSasl = FrameType(0x01)
@@ -133,16 +135,16 @@ func EncodeFrame(b []byte) (fb []byte) {
 	var frameSizeBytes = make([]byte, 4)
 	binary.BigEndian.PutUint32(frameSizeBytes, frameSize)
 
-	frameContent := []byte { }
+	frameContent := []byte{}
 	frameContent = append(frameContent, frameSizeBytes...)
-	frameContent = append(frameContent, []byte { 0x02, 0x00, 0x00, 0x00 }... )
+	frameContent = append(frameContent, []byte{0x02, 0x00, 0x00, 0x00}...)
 	frameContent = append(frameContent, b...)
 
 	return frameContent
 }
 
+var HANDSHAKE_MSG = []byte{0x41, 0x4d, 0x51, 0x50, 0x00, 0x01, 0x00, 0x00}
 
-var HANDSHAKE_MSG = []byte { 0x41, 0x4d, 0x51, 0x50, 0x00, 0x01, 0x00, 0x00  }
 func SendHandshake(c net.Conn) (int, error) {
 	c.Write(HANDSHAKE_MSG)
 

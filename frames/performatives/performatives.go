@@ -1,18 +1,18 @@
 package performatives
 
 import (
-	"net"
 	"encoding/binary"
 	"github.com/zubairhamed/go-amqp/frames"
-	"log"
+	"github.com/zubairhamed/go-amqp/types"
+	"net"
 )
 
 type Performative interface {
-	Encode() ([]byte, error)
+	types.AMQPType
 }
 
 func SendPerformative(c net.Conn, p Performative) (int, error) {
-	b, err := p.Encode()
+	b, _, err := p.Encode()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -23,10 +23,7 @@ func SendPerformative(c net.Conn, p Performative) (int, error) {
 
 	frameContent := frames.EncodeFrame(b)
 
-	log.Println("SEND PERFORMTIVE", frameContent)
-
 	c.Write(frameContent)
 
 	return 0, nil
 }
-

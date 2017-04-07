@@ -15,14 +15,14 @@ type ULong struct {
 
 func (s *ULong) Encode() ([]byte, uint, error) {
 	if s == nil {
-		return []byte { byte(TYPE_NULL) }, 1, nil
+		return []byte{byte(TYPE_NULL)}, 1, nil
 	}
 	return EncodeULongField(s)
 }
 
 func EncodeULongField(s *ULong) ([]byte, uint, error) {
 	if s == nil {
-		return []byte { byte(TYPE_ULONG_0) }, 1, nil
+		return []byte{byte(TYPE_ULONG_0)}, 1, nil
 	}
 
 	v := s.value
@@ -40,7 +40,7 @@ func EncodeULongField(s *ULong) ([]byte, uint, error) {
 		b = append(b, byteVal...)
 
 	case v < 256:
-		b = append(b, []byte{ byte(TYPE_ULONG_SMALL),  byte(v) }...)
+		b = append(b, []byte{byte(TYPE_ULONG_SMALL), byte(v)}...)
 	}
 
 	return b, uint(len(b)), nil

@@ -17,4 +17,3 @@ func DecodeTimestampField(v []byte) (val *Timestamp, fieldLength int, err error)
 	}
 	return
 }
-

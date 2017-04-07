@@ -10,7 +10,7 @@ type Session struct {
 	connection *Connection
 }
 
-func (s *Session) CreateSender(queue string) (sender *Sender, err error){
+func (s *Session) CreateSender(queue string) (sender *Sender, err error) {
 	err = s.initConnection()
 	if err != nil {
 		return

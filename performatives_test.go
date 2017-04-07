@@ -1,10 +1,10 @@
 package amqp
 
 import (
-	"testing"
-	"github.com/zubairhamed/go-amqp/frames/performatives"
 	"github.com/stretchr/testify/assert"
 	"github.com/zubairhamed/go-amqp/frames"
+	"github.com/zubairhamed/go-amqp/frames/performatives"
+	"testing"
 )
 
 func TestOpenPerformative(t *testing.T) {

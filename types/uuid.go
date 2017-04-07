@@ -4,4 +4,3 @@ type UUID struct {
 	BaseAMQPType
 	value string
 }
-

@@ -1,9 +1,9 @@
 package amqp
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"github.com/zubairhamed/go-amqp/types"
+	"testing"
 )
 
 // array
@@ -25,7 +25,7 @@ func TestTypeString(t *testing.T) {
 	b, l, e := types.EncodeStringField(nil)
 	assert.Nil(t, e)
 	assert.Equal(t, uint(1), l)
-	assert.Equal(t, []byte { byte(types.TYPE_NULL)}, b)
+	assert.Equal(t, []byte{byte(types.TYPE_NULL)}, b)
 
 	var s *types.String
 
@@ -44,7 +44,7 @@ func TestTypeymbol(t *testing.T) {
 	b, l, e := types.EncodeSymbolField(nil)
 	assert.Nil(t, e)
 	assert.Equal(t, uint(1), l)
-	assert.Equal(t, []byte { byte(types.TYPE_NULL)}, b)
+	assert.Equal(t, []byte{byte(types.TYPE_NULL)}, b)
 
 	var s *types.Symbol
 
@@ -65,7 +65,7 @@ func TestTypeUInt(t *testing.T) {
 	b, l, e := types.EncodeUIntField(nil)
 	assert.Nil(t, e)
 	assert.Equal(t, uint(1), l)
-	assert.Equal(t, []byte { byte(types.TYPE_UINT_0)}, b)
+	assert.Equal(t, []byte{byte(types.TYPE_UINT_0)}, b)
 
 	var s *types.UInt
 
@@ -84,7 +84,7 @@ func TestEncodeULong(t *testing.T) {
 	b, l, e := types.EncodeULongField(nil)
 	assert.Nil(t, e)
 	assert.Equal(t, uint(1), l)
-	assert.Equal(t, []byte { byte(types.TYPE_ULONG_0)}, b)
+	assert.Equal(t, []byte{byte(types.TYPE_ULONG_0)}, b)
 
 	var s *types.ULong
 
@@ -103,7 +103,7 @@ func TestEncodeUShort(t *testing.T) {
 	b, l, e := types.EncodeUShortField(nil)
 	assert.Nil(t, e)
 	assert.Equal(t, uint(3), l)
-	assert.Equal(t, []byte { byte(types.TYPE_USHORT), 0, 0}, b)
+	assert.Equal(t, []byte{byte(types.TYPE_USHORT), 0, 0}, b)
 
 	var s *types.UShort
 
@@ -117,4 +117,5 @@ func TestEncodeUShort(t *testing.T) {
 	assert.Nil(t, e)
 	assert.Equal(t, uint(3), l)
 }
+
 // uuid

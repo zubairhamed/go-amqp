@@ -1,24 +1,24 @@
 package amqp
 
 import (
-	"net"
 	"bufio"
-	"log"
 	. "github.com/zubairhamed/go-amqp/frames"
 	. "github.com/zubairhamed/go-amqp/frames/performatives"
 	"github.com/zubairhamed/go-amqp/types"
+	"log"
+	"net"
 )
 
 func NewConnection(url string) *Connection {
 	return &Connection{
-		url: url,
+		url:       url,
 		connected: false,
 	}
 }
 
 type Connection struct {
-	netConn net.Conn
-	url string
+	netConn   net.Conn
+	url       string
 	connected bool
 }
 
@@ -34,15 +34,12 @@ func (c *Connection) doConnect() (err error) {
 	// Handshake
 	SendHandshake(conn)
 	_, err = bufio.NewReader(conn).Read(readBuf)
-	log.Println("From Handshake", readBuf)
-
 	err = HandleHandshake(readBuf)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	// Send Open Performative
-	log.Println("sending open peformative")
 	openPerformative := NewOpenPerformative()
 	openPerformative.ContainerId = types.NewString("MyContainer")
 
@@ -50,7 +47,6 @@ func (c *Connection) doConnect() (err error) {
 	if err != nil {
 		panic(err.Error())
 	}
-	log.Println("gpt back reply open peformative")
 
 	_, err = bufio.NewReader(conn).Read(readBuf)
 	openPerformative, err = DecodeOpenPerformative(readBuf)
@@ -58,20 +54,10 @@ func (c *Connection) doConnect() (err error) {
 		log.Panic(err)
 		return
 	}
+
+	DescribeType(openPerformative)
+
 	// Read Incoming Open Performative
-
-	log.Println("Protocol Negotiation OK")
-	log.Println("ChannelMax", openPerformative.ChannelMax)
-	log.Println("ContainerId", openPerformative.ContainerId)
-	log.Println("DesiredCapabilities", openPerformative.DesiredCapabilities)
-	log.Println("HostName", openPerformative.Hostname)
-	log.Println("Idle Timeout", openPerformative.IdleTimeout)
-	log.Println("Incoming Locales", openPerformative.IncomingLocales)
-	log.Println("MaxFrameSize", openPerformative.MaxFrameSize)
-	log.Println("Offered Capabilities", openPerformative.OfferedCapabilities)
-	log.Println("Outgoing Locales", openPerformative.OutgoingLocales)
-	log.Println("Properties", openPerformative.Properties)
-
 	beginPerformative := NewBeginPerformative()
 	beginPerformative.NextOutgoingId = types.NewUInt(4294967293)
 	beginPerformative.IncomingWindow = types.NewUInt(2048)
@@ -87,15 +73,7 @@ func (c *Connection) doConnect() (err error) {
 		return
 	}
 
-	// log.Println("",
-	log.Println("Properties", beginPerformative.Properties)
-	log.Println("HandleMax", beginPerformative.HandleMax)
-	log.Println("OfferedCapabilities", beginPerformative.OfferedCapabilities)
-	log.Println("OutgoingWindow", beginPerformative.OutgoingWindow)
-	log.Println("IncomingWindow", beginPerformative.IncomingWindow)
-	log.Println("NextOutgoingId", beginPerformative.NextOutgoingId)
-	log.Println("RemoteChannel", beginPerformative.RemoteChannel)
-
+	DescribeType(beginPerformative)
 
 	// >> Begin
 	// << Begin

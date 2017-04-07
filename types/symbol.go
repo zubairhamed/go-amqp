@@ -1,8 +1,8 @@
 package types
 
 import (
-	"errors"
 	"encoding/binary"
+	"errors"
 )
 
 func NewSymbol(v string) *Symbol {
@@ -18,14 +18,14 @@ type Symbol struct {
 
 func (s *Symbol) Encode() ([]byte, uint, error) {
 	if s == nil {
-		return []byte { byte(TYPE_NULL) }, 1, nil
+		return []byte{byte(TYPE_NULL)}, 1, nil
 	}
 	return EncodeSymbolField(s)
 }
 
 func EncodeSymbolField(s *Symbol) ([]byte, uint, error) {
 	if s == nil {
-		return []byte { byte(TYPE_NULL) }, 1, nil
+		return []byte{byte(TYPE_NULL)}, 1, nil
 	}
 
 	v := s.value
@@ -70,7 +70,7 @@ func DecodeSymbolField(v []byte) (val *Symbol, fieldLength uint, err error) {
 
 func EncodeSymbolArrayField(v []*Symbol) (enc []byte, l uint, err error) {
 	if len(v) == 0 {
-		return []byte { byte(TYPE_NULL) }, 1, nil
+		return []byte{byte(TYPE_NULL)}, 1, nil
 	}
 
 	return nil, 0, nil
@@ -86,4 +86,3 @@ func DecodeSymbolArrayField(v []byte) (val []*Symbol, fieldLength uint, err erro
 	}
 	return
 }
-

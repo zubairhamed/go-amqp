@@ -2,8 +2,8 @@ package performatives
 
 import (
 	"errors"
-	. "github.com/zubairhamed/go-amqp/types"
 	. "github.com/zubairhamed/go-amqp/frames"
+	. "github.com/zubairhamed/go-amqp/types"
 )
 
 func NewBeginPerformative() *PerformativeBegin {
@@ -24,6 +24,7 @@ func NewBeginPerformative() *PerformativeBegin {
 </type>
 */
 type PerformativeBegin struct {
+	BaseAMQPType
 	RemoteChannel       *UShort
 	NextOutgoingId      *UInt
 	IncomingWindow      *UInt
@@ -34,7 +35,7 @@ type PerformativeBegin struct {
 	Properties          *Map
 }
 
-func (p *PerformativeBegin) Encode() (enc []byte, err error) {
+func (p *PerformativeBegin) Encode() (enc []byte, l uint, err error) {
 	var bodyFieldBytes []byte = []byte{}
 	var bodyFieldLength uint = 0
 	var encField []byte
@@ -45,56 +46,56 @@ func (p *PerformativeBegin) Encode() (enc []byte, err error) {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.NextOutgoingId)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.IncomingWindow)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.OutgoingWindow)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.HandleMax)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeSymbolArrayField(p.OfferedCapabilities)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeSymbolArrayField(p.DesiredCapabilities)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	encField, fieldLen, err = EncodeField(p.Properties)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField... )
+	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
 	performativeBytes := []byte{
 		0x00,
@@ -107,7 +108,11 @@ func (p *PerformativeBegin) Encode() (enc []byte, err error) {
 
 	performativeBytes = append(performativeBytes, bodyFieldBytes...)
 
-	return performativeBytes, nil
+	return performativeBytes, uint(len(performativeBytes)), nil
+}
+
+func (b *PerformativeBegin) GetType() Type {
+	return TYPE_PERFORMATIVE_BEGIN
 }
 
 func DecodeBeginPerformative(b []byte) (op *PerformativeBegin, err error) {
@@ -163,7 +168,7 @@ func DecodeBeginPerformative(b []byte) (op *PerformativeBegin, err error) {
 
 	var fieldSize uint
 
-	if listCount  > 0 {
+	if listCount > 0 {
 		// remote-channel
 		op.RemoteChannel, fieldSize, err = DecodeUShortField(remainingBytes)
 		if err != nil {
@@ -240,5 +245,3 @@ func DecodeBeginPerformative(b []byte) (op *PerformativeBegin, err error) {
 	}
 	return
 }
-
-

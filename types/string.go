@@ -45,7 +45,7 @@ func DecodeStringField(v []byte) (val *String, fieldLength uint, err error) {
 		offset := uint(2)
 		valueLength = uint(v[1])
 		fieldLength = valueLength + offset
-		strValue = string(v[offset:valueLength + offset])
+		strValue = string(v[offset : valueLength+offset])
 
 	} else if ctor == TYPE_STRING_8_UTF8 {
 		valueLength = uint(binary.BigEndian.Uint32(v[1:4]))
@@ -62,7 +62,7 @@ func DecodeStringField(v []byte) (val *String, fieldLength uint, err error) {
 
 func EncodeStringField(s *String) ([]byte, uint, error) {
 	if s == nil {
-		return []byte { byte(TYPE_NULL) }, 1, nil
+		return []byte{byte(TYPE_NULL)}, 1, nil
 	}
 
 	v := s.value
