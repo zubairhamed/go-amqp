@@ -26,17 +26,21 @@ func NewOpenPerformative() *PerformativeOpen {
 </type>
 */
 type PerformativeOpen struct {
-	BaseAMQPType
+	BasePerformative
 	ContainerId         *String
 	Hostname            *String
 	MaxFrameSize        *UInt
 	ChannelMax          *UShort
-	IdleTimeout         *UInt
-	OutgoingLocales     []*Symbol
-	IncomingLocales     []*Symbol
+	IdleTimeout         *Milliseconds
+	OutgoingLocales     []*IetfLanguageTag
+	IncomingLocales     []*IetfLanguageTag
 	OfferedCapabilities []*Symbol
 	DesiredCapabilities []*Symbol
-	Properties          *Map
+	Properties          *Fields
+}
+
+func (b *PerformativeOpen) Stringify() string {
+	return "Stringify: Performative Open"
 }
 
 func (p *PerformativeOpen) Encode() (enc []byte, l uint, err error) {
@@ -80,14 +84,14 @@ func (p *PerformativeOpen) Encode() (enc []byte, l uint, err error) {
 	bodyFieldLength += fieldLen
 	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
-	encField, fieldLen, err = EncodeSymbolArrayField(p.OutgoingLocales)
+	encField, fieldLen, err = EncodeIetfLanguageTagArrayField(p.OutgoingLocales)
 	if err != nil {
 		return
 	}
 	bodyFieldLength += fieldLen
 	bodyFieldBytes = append(bodyFieldBytes, encField...)
 
-	encField, fieldLen, err = EncodeSymbolArrayField(p.IncomingLocales)
+	encField, fieldLen, err = EncodeIetfLanguageTagArrayField(p.IncomingLocales)
 	if err != nil {
 		return
 	}
@@ -224,7 +228,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 
 	if listCount > 4 {
 		// idle-time-out
-		op.IdleTimeout, fieldSize, err = DecodeUIntField(remainingBytes)
+		op.IdleTimeout, fieldSize, err = DecodeMillisecondsField(remainingBytes)
 		if err != nil {
 			return
 		}
@@ -233,7 +237,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 
 	if listCount > 5 {
 		// outgoing-locales
-		op.OutgoingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		op.OutgoingLocales, fieldSize, err = DecodeIetfLanguageTagArrayField(remainingBytes)
 		if err != nil {
 			return
 		}
@@ -242,7 +246,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 
 	if listCount > 6 {
 		// incoming-locales
-		op.IncomingLocales, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		op.IncomingLocales, fieldSize, err = DecodeIetfLanguageTagArrayField(remainingBytes)
 		if err != nil {
 			return
 		}
@@ -269,7 +273,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 
 	if listCount > 9 {
 		// properties
-		op.Properties, fieldSize, err = DecodeMapField(remainingBytes)
+		op.Properties, fieldSize, err = DecodeFieldsField(remainingBytes)
 		if err != nil {
 			return
 		}

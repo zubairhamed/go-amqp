@@ -24,6 +24,10 @@ func (s *String) Encode() ([]byte, uint, error) {
 	return EncodeStringField(s)
 }
 
+func (b *String) Stringify() string {
+	return b.Value()
+}
+
 func DecodeStringField(v []byte) (val *String, fieldLength uint, err error) {
 
 	ctor := Type(v[0])

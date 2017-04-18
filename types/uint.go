@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 )
 
 func NewUInt(v uint32) *UInt {
@@ -12,8 +13,12 @@ func NewUInt(v uint32) *UInt {
 }
 
 type UInt struct {
-	BaseAMQPType
+	*BaseAMQPType
 	value uint32
+}
+
+func (b *UInt) Stringify() string {
+	return fmt.Sprint(b.Value())
 }
 
 func (s *UInt) Encode() ([]byte, uint, error) {

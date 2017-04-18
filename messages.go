@@ -1,5 +1,7 @@
 package amqp
 
+import "log"
+
 func CreateProtocolHeader(t ProtocolType) []byte {
 	return []byte{
 		65, 77, 81, 80, byte(t), 1, 0, 0,
@@ -7,6 +9,7 @@ func CreateProtocolHeader(t ProtocolType) []byte {
 }
 
 func NewMessage() *Message {
+	log.Println("NewMessage")
 	return &Message{}
 }
 

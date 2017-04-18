@@ -1,9 +1,17 @@
 package amqp
 
-func NewSession(conn *Connection) *Session {
-	return &Session{
+import (
+	"log"
+	"github.com/zubairhamed/go-amqp/frames/performatives"
+)
+
+func NewSession(conn *Connection) (s *Session, err error) {
+	s = &Session{
 		connection: conn,
 	}
+	err = s.initConnection()
+
+	return
 }
 
 type Session struct {
@@ -11,7 +19,15 @@ type Session struct {
 }
 
 func (s *Session) CreateSender(queue string) (sender *Sender, err error) {
-	err = s.initConnection()
+	log.Println("Session:CreateSender")
+
+	attach := performatives.NewAttachPerformative()
+
+	s.connection.SendPerformative(attach)
+
+	// >> Attach sender
+	// << Attach sender
+
 	if err != nil {
 		return
 	}
@@ -23,7 +39,10 @@ func (s *Session) CreateSender(queue string) (sender *Sender, err error) {
 }
 
 func (s *Session) CreateReceiver(queue string) (receiver *Receiver, err error) {
-	err = s.initConnection()
+	log.Println("Session:CreateReceiver")
+	// >> attach receiver
+	// << attach receiver
+
 	if err != nil {
 		return
 	}
@@ -35,7 +54,7 @@ func (s *Session) CreateReceiver(queue string) (receiver *Receiver, err error) {
 }
 
 func (s *Session) Close() {
-
+	log.Println("Session:Close")
 }
 
 func (s *Session) initConnection() (err error) {

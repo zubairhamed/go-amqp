@@ -11,7 +11,10 @@ func main() {
 	queue := "my_queue"
 
 	conn := amqp.NewConnection(url)
-	session := amqp.NewSession(conn)
+	session, err := amqp.NewSession(conn)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	sender, err := session.CreateSender(queue)
 	if err != nil {

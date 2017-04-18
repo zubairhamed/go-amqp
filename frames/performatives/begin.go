@@ -24,15 +24,15 @@ func NewBeginPerformative() *PerformativeBegin {
 </type>
 */
 type PerformativeBegin struct {
-	BaseAMQPType
+	BasePerformative
 	RemoteChannel       *UShort
-	NextOutgoingId      *UInt
+	NextOutgoingId      *TransferNumber
 	IncomingWindow      *UInt
 	OutgoingWindow      *UInt
-	HandleMax           *UInt
+	HandleMax           *Handle
 	OfferedCapabilities []*Symbol
 	DesiredCapabilities []*Symbol
-	Properties          *Map
+	Properties          *Fields
 }
 
 func (p *PerformativeBegin) Encode() (enc []byte, l uint, err error) {
@@ -111,6 +111,10 @@ func (p *PerformativeBegin) Encode() (enc []byte, l uint, err error) {
 	return performativeBytes, uint(len(performativeBytes)), nil
 }
 
+func (b *PerformativeBegin) Stringify() string {
+	return "Stringify: Performative Begin"
+}
+
 func (b *PerformativeBegin) GetType() Type {
 	return TYPE_PERFORMATIVE_BEGIN
 }
@@ -179,7 +183,7 @@ func DecodeBeginPerformative(b []byte) (op *PerformativeBegin, err error) {
 
 	if listCount > 1 {
 		// next-outgoing-id
-		op.NextOutgoingId, fieldSize, err = DecodeUIntField(remainingBytes)
+		op.NextOutgoingId, fieldSize, err = DecodeTransferNumberField(remainingBytes)
 		if err != nil {
 			return
 		}
@@ -206,7 +210,7 @@ func DecodeBeginPerformative(b []byte) (op *PerformativeBegin, err error) {
 
 	if listCount > 4 {
 		// handle-max
-		op.HandleMax, fieldSize, err = DecodeUIntField(remainingBytes)
+		op.HandleMax, fieldSize, err = DecodeHandleField(remainingBytes)
 		if err != nil {
 			return
 		}
@@ -233,7 +237,7 @@ func DecodeBeginPerformative(b []byte) (op *PerformativeBegin, err error) {
 
 	if listCount > 7 {
 		// properties
-		op.Properties, fieldSize, err = DecodeMapField(remainingBytes)
+		op.Properties, fieldSize, err = DecodeFieldsField(remainingBytes)
 		if err != nil {
 			return
 		}

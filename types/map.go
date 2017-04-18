@@ -3,18 +3,37 @@ package types
 import (
 	"encoding/binary"
 	"errors"
+	"log"
 )
+
+func NewMap(v map[string]AMQPType) *Map {
+	return nil
+}
 
 type Map struct {
 	BaseAMQPType
 	values map[string]AMQPType
 }
 
+func (b *Map) Stringify() string {
+
+	for k, v := range b.values {
+		log.Println("Stringify Map", k, v)
+	}
+
+	return ""
+}
+
+
 func (m *Map) Put(k string, v AMQPType) {
 	m.values[k] = v
 }
 
 func (s *Map) Encode() ([]byte, uint, error) {
+	if s == nil {
+		return []byte{byte(TYPE_NULL)}, 1, nil
+	}
+
 	return EncodeMapField(s)
 }
 

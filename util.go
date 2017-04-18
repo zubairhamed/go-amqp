@@ -5,6 +5,9 @@ import (
 	"github.com/zubairhamed/go-amqp/frames/performatives"
 	"github.com/zubairhamed/go-amqp/types"
 	"log"
+	"reflect"
+	"net"
+	"bufio"
 )
 
 func PrintHex(b []byte) {
@@ -17,6 +20,14 @@ func PrintHex(b []byte) {
 		idx += 2
 	}
 	log.Println(outStr)
+}
+
+func DescribeField(t types.AMQPType) string {
+	val := reflect.ValueOf(t)
+	if val.IsNil() {
+		return "nil"
+	}
+	return t.Stringify()
 }
 
 func DescribeType(t types.AMQPType) {
@@ -41,14 +52,14 @@ func DescribeType(t types.AMQPType) {
 		p := t.(*performatives.PerformativeBegin)
 		log.Println()
 		log.Println("-- BEGIN PERFORMATIVE --")
-		log.Println("remote-channel:", p.RemoteChannel)
-		log.Println("next-outgoing-id:", p.NextOutgoingId)
-		log.Println("incoming-window:", p.IncomingWindow)
-		log.Println("outgoing-window:", p.OutgoingWindow)
-		log.Println("handle-max:", p.HandleMax)
+		log.Println("remote-channel:", DescribeField(p.RemoteChannel))
+		log.Println("next-outgoing-id:", DescribeField(p.NextOutgoingId))
+		log.Println("incoming-window:", DescribeField(p.IncomingWindow))
+		log.Println("outgoing-window:", DescribeField(p.OutgoingWindow))
+		log.Println("handle-max:", DescribeField(p.HandleMax))
 		log.Println("offered-capabilities:", p.OfferedCapabilities)
 		log.Println("desired-capabilities:", p.DesiredCapabilities)
-		log.Println("properties:", p.Properties)
+		log.Println("properties:", DescribeField(p.Properties))
 		log.Println()
 
 	case types.TYPE_PERFORMATIVE_ATTACH:
@@ -158,4 +169,12 @@ func DescribeType(t types.AMQPType) {
 
 func DescribeTypeValue(t types.AMQPType) {
 
+}
+
+func ReadFromConnection(c net.Conn) ([]byte, error){
+	readBuf := make([]byte, 1500)
+
+	_, err := bufio.NewReader(c).Read(readBuf)
+
+	return readBuf, err
 }

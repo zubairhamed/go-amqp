@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"log"
 )
 
 type Type byte
@@ -66,6 +67,11 @@ const (
 )
 
 func EncodeField(t AMQPType) (b []byte, l uint, err error) {
+	log.Println("Encoding", t)
+	if t == nil {
+		err = errors.New("nil field found")
+		return
+	}
 	return t.Encode()
 }
 
@@ -86,6 +92,7 @@ func DecodeField(v []byte) (AMQPType, uint, error) {
 type AMQPType interface {
 	GetType() Type
 	Encode() ([]byte, uint, error)
+	Stringify() string
 }
 
 type BaseAMQPType struct {

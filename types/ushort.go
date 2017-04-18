@@ -64,3 +64,7 @@ func (s *UShort) Encode() ([]byte, uint, error) {
 func (b *UShort) GetType() Type {
 	return TYPE_USHORT
 }
+
+func (b *UShort) Stringify() string {
+	return string(b.Value())
+}
