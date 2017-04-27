@@ -9,3 +9,7 @@ func NewDeliveryNumber(v uint32) *DeliveryNumber {
 type DeliveryNumber struct {
 	*SequenceNumber
 }
+
+func DecodeDeliveryNumberField(v []byte) (val *DeliveryNumber, fieldLength uint, err error) {
+	return
+}

@@ -18,4 +18,3 @@ func DecodeTransferNumberField(v []byte) (val *TransferNumber, fieldLength uint,
 	}
 	return
 }
-

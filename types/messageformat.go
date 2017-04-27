@@ -9,3 +9,7 @@ func NewMessageFormat(v uint32) *MessageFormat {
 type MessageFormat struct {
 	*UInt
 }
+
+func DecodeMessageFormatField(v []byte) (val *MessageFormat, fieldLength uint, err error) {
+	return
+}

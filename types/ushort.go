@@ -56,7 +56,7 @@ func (s *UShort) Value() uint16 {
 
 func (s *UShort) Encode() ([]byte, uint, error) {
 	if s == nil {
-		return []byte{byte(TYPE_NULL)}, 1, nil
+		return NullValue()
 	}
 	return EncodeUShortField(s)
 }

@@ -24,7 +24,6 @@ func (b *Map) Stringify() string {
 	return ""
 }
 
-
 func (m *Map) Put(k string, v AMQPType) {
 	m.values[k] = v
 }
@@ -41,6 +40,8 @@ func EncodeMapField(s *Map) ([]byte, uint, error) {
 	if s == nil {
 		return []byte{byte(TYPE_NULL)}, 1, nil
 	}
+
+	// ?
 
 	return nil, 0, nil
 }

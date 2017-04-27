@@ -1,7 +1,7 @@
 package types
 
 func NewChar(v string) *Char {
-	return &Char {
+	return &Char{
 		value: v,
 	}
 }

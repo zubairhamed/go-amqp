@@ -1,26 +1,13 @@
 package amqp
 
 import (
-	"encoding/hex"
+	"bufio"
 	"github.com/zubairhamed/go-amqp/frames/performatives"
 	"github.com/zubairhamed/go-amqp/types"
 	"log"
-	"reflect"
 	"net"
-	"bufio"
+	"reflect"
 )
-
-func PrintHex(b []byte) {
-	str := hex.EncodeToString(b)
-	idx := 0
-
-	outStr := ""
-	for idx < len(str) {
-		outStr = outStr + str[idx:idx+2] + " "
-		idx += 2
-	}
-	log.Println(outStr)
-}
 
 func DescribeField(t types.AMQPType) string {
 	val := reflect.ValueOf(t)
@@ -36,16 +23,16 @@ func DescribeType(t types.AMQPType) {
 		p := t.(*performatives.PerformativeOpen)
 		log.Println()
 		log.Println("-- OPEN PERFORMATIVE --")
-		log.Println("container-id:", p.ContainerId.Value())
-		log.Println("hostname:", p.Hostname.Value())
-		log.Println("max-frame-size:", p.MaxFrameSize.Value())
-		log.Println("channel-max:", p.ChannelMax.Value())
-		log.Println("idle-time-out:", p.IdleTimeout.Value())
-		log.Println("outgoing-locales:", p.OutgoingLocales)
-		log.Println("incoming-locales:", p.IncomingLocales)
-		log.Println("offered-capabilities:", p.OfferedCapabilities)
-		log.Println("desired-capabilities:", p.DesiredCapabilities)
-		log.Println("properties:", p.Properties)
+		log.Println("container-id:", DescribeField(p.ContainerId))
+		log.Println("hostname:", DescribeField(p.Hostname))
+		log.Println("max-frame-size:", DescribeField(p.MaxFrameSize))
+		log.Println("channel-max:", DescribeField(p.ChannelMax))
+		log.Println("idle-time-out:", DescribeField(p.IdleTimeout))
+		log.Println("outgoing-locales:", DescribeField(p.OutgoingLocales))
+		log.Println("incoming-locales:", DescribeField(p.IncomingLocales))
+		log.Println("offered-capabilities:", DescribeField(p.OfferedCapabilities))
+		log.Println("desired-capabilities:", DescribeField(p.DesiredCapabilities))
+		log.Println("properties:", DescribeField(p.Properties))
 		log.Println()
 
 	case types.TYPE_PERFORMATIVE_BEGIN:
@@ -57,31 +44,29 @@ func DescribeType(t types.AMQPType) {
 		log.Println("incoming-window:", DescribeField(p.IncomingWindow))
 		log.Println("outgoing-window:", DescribeField(p.OutgoingWindow))
 		log.Println("handle-max:", DescribeField(p.HandleMax))
-		log.Println("offered-capabilities:", p.OfferedCapabilities)
-		log.Println("desired-capabilities:", p.DesiredCapabilities)
+		log.Println("offered-capabilities:", DescribeField(p.OfferedCapabilities))
+		log.Println("desired-capabilities:", DescribeField(p.DesiredCapabilities))
 		log.Println("properties:", DescribeField(p.Properties))
 		log.Println()
 
 	case types.TYPE_PERFORMATIVE_ATTACH:
-		// p := t.(*performatives.PerformativeAttach)
+		p := t.(*performatives.PerformativeAttach)
 		log.Println()
 		log.Println("-- ATTACH PERFORMATIVE --")
-		/*
-			name
-			handle
-			role
-			snd-settle-mode
-			rcv-settle-mode
-			source
-			target
-			unsettled
-			incomplete-unsettled
-			initial-delivery-count
-			max-message-size
-			offered-capabilities
-			desired-capabilities
-			properties
-		*/
+		log.Println("name:", DescribeField(p.Name))
+		log.Println("handle:", DescribeField(p.Handle))
+		log.Println("role:", DescribeField(p.Role))
+		log.Println("snd-settle-mode:", DescribeField(p.SenderSettleMode))
+		log.Println("rcv-settle-mode:", DescribeField(p.ReceiverSettleMode))
+		log.Println("source:", DescribeField(p.Source))
+		log.Println("target:", DescribeField(p.Target))
+		log.Println("unsettled:", DescribeField(p.Unsettled))
+		log.Println("incomplete-unsettled:", DescribeField(p.IncompleteUnsettled))
+		log.Println("initial-delivery-count:", DescribeField(p.InitialDeliveryCount))
+		log.Println("max-message-size:", DescribeField(p.MaxMessageSize))
+		log.Println("offered-capabilities:", DescribeField(p.OfferedCapabilities))
+		log.Println("desired-capabilities:", DescribeField(p.DesiredCapabilities))
+		log.Println("properties:", DescribeField(p.Properties))
 		log.Println()
 
 	case types.TYPE_PERFORMATIVE_CLOSE:
@@ -171,10 +156,18 @@ func DescribeTypeValue(t types.AMQPType) {
 
 }
 
-func ReadFromConnection(c net.Conn) ([]byte, error){
+func ReadFromConnection(c net.Conn) ([]byte, error) {
 	readBuf := make([]byte, 1500)
 
 	_, err := bufio.NewReader(c).Read(readBuf)
 
 	return readBuf, err
+}
+
+func LogIn(perf, name string) {
+	log.Println("[", name, "] <<", perf)
+}
+
+func LogOut(perf, name string) {
+	log.Println("[", name, "] >>", perf)
 }

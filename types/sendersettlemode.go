@@ -1,5 +1,21 @@
 package types
 
+import (
+	"log"
+)
+
+func NewSenderSettleMode(v byte) *SenderSettleMode {
+	r := &SenderSettleMode{}
+	if v == 0 {
+		r.SetUnsettled()
+	} else if v == 1 {
+		r.SetSettled()
+	} else if v == 2 {
+		r.SetMixed()
+	}
+	return r
+}
+
 /*
 Settlement policy for a Sender.
 
@@ -16,17 +32,54 @@ Valid Values
 */
 type SenderSettleMode struct {
 	*UByte
-	choiceValue byte
 }
 
 func (s *SenderSettleMode) SetUnsettled() {
-	s.choiceValue = 0
+	s.UByte.value = 0
 }
 
 func (s *SenderSettleMode) SetSettled() {
-	s.choiceValue = 1
+	s.UByte.value = 1
 }
 
 func (s *SenderSettleMode) SetMixed() {
-	s.choiceValue = 2
+	s.UByte.value = 2
+}
+
+func (b *SenderSettleMode) Stringify() string {
+	if b.UByte.value == 0 {
+		return "unsettled"
+	} else if b.UByte.value == 1 {
+		return "settled"
+	} else if b.UByte.value == 2 {
+		return "mixed"
+	}
+	return "?"
+}
+
+func DecodeSenderSettleModeField(v []byte) (val *SenderSettleMode, fieldLength uint, err error) {
+	ctor := Type(v[0])
+	log.Println("snd", ctor)
+	if ctor == TYPE_NULL {
+		fieldLength = 1
+		return
+	}
+
+	switch {
+	case ctor == TYPE_NULL:
+		fieldLength = 1
+		return
+
+	case ctor == TYPE_BOOLEAN_TRUE:
+		val = NewSenderSettleMode(0)
+		fieldLength = 1
+		return
+
+	case ctor == TYPE_BOOLEAN_FALSE:
+		val = NewSenderSettleMode(1)
+		fieldLength = 1
+		return
+	}
+
+	return
 }

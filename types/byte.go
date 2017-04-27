@@ -1,7 +1,7 @@
 package types
 
 func NewByte(v byte) *Byte {
-	return &Byte {
+	return &Byte{
 		value: v,
 	}
 }
@@ -10,4 +10,8 @@ func NewByte(v byte) *Byte {
 type Byte struct {
 	BaseAMQPType
 	value byte
+}
+
+func DecodeAnyTypeField(v []byte) (val []byte, fieldLength uint, err error) {
+	return
 }

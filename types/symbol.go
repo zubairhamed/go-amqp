@@ -69,24 +69,58 @@ func DecodeSymbolField(v []byte) (val *Symbol, fieldLength uint, err error) {
 		return
 	}
 
+	offset := uint(2)
+	valueLength := uint(v[1])
+	fieldLength = valueLength + offset
+
+	strVal := string(v[2:fieldLength])
+
+	val = NewSymbol(strVal)
+
 	return
 }
 
-func EncodeSymbolArrayField(v []*Symbol) (enc []byte, l uint, err error) {
-	if len(v) == 0 {
-		return []byte{byte(TYPE_NULL)}, 1, nil
+// Array Type
+type SymbolArray struct {
+	BaseAMQPType
+	value []*Symbol
+}
+
+func (s *SymbolArray) Encode() ([]byte, uint, error) {
+	if s == nil {
+		return NullValue()
+	}
+	return EncodeSymbolArrayField(s)
+}
+
+func (b *SymbolArray) Stringify() string {
+	return "String: SymbolArray"
+}
+
+func (s *SymbolArray) Append(symbol *Symbol) {
+	s.value = append(s.value, symbol)
+}
+
+func (s *SymbolArray) Length() int {
+	return len(s.value)
+}
+
+func EncodeSymbolArrayField(v *SymbolArray) (enc []byte, l uint, err error) {
+	if v.Length() == 0 {
+		return NullValue()
 	}
 
 	return nil, 0, nil
 }
 
-func DecodeSymbolArrayField(v []byte) (val []*Symbol, fieldLength uint, err error) {
+func DecodeSymbolArrayField(v []byte) (val *SymbolArray, fieldLength uint, err error) {
 	ctor := Type(v[0])
 
 	if ctor == TYPE_NULL {
-		val = []*Symbol{}
+		val = &SymbolArray{}
 		fieldLength = 1
 		return
 	}
+
 	return
 }

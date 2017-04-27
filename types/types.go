@@ -2,7 +2,7 @@ package types
 
 import (
 	"errors"
-	"log"
+	"reflect"
 )
 
 type Type byte
@@ -25,6 +25,7 @@ const (
 	TYPE_PERFORMATIVE_DETACH      = Type(0x16)
 	TYPE_PERFORMATIVE_END         = Type(0x17)
 	TYPE_PERFORMATIVE_CLOSE       = Type(0x18)
+	TYPE_ERROR                    = Type(0x1D)
 	TYPE_NULL                     = Type(0x40)
 	TYPE_BOOLEAN_TRUE             = Type(0x41)
 	TYPE_BOOLEAN_FALSE            = Type(0x42)
@@ -67,12 +68,28 @@ const (
 )
 
 func EncodeField(t AMQPType) (b []byte, l uint, err error) {
-	log.Println("Encoding", t)
-	if t == nil {
-		err = errors.New("nil field found")
-		return
+	v := reflect.ValueOf(t)
+	if t == nil || v.IsNil() {
+		return []byte{byte(TYPE_NULL)}, 1, nil
 	}
 	return t.Encode()
+}
+
+func EncodeFields(seq ...AMQPType) (b []byte, l uint, err error) {
+	b = []byte{}
+	l = 0
+	var encField []byte
+	var fieldLen uint
+
+	for _, v := range seq {
+		encField, fieldLen, err = EncodeField(v)
+		if err != nil {
+			return
+		}
+		l += fieldLen
+		b = append(b, encField...)
+	}
+	return
 }
 
 func DecodeField(v []byte) (AMQPType, uint, error) {
@@ -101,4 +118,8 @@ type BaseAMQPType struct {
 
 func (b *BaseAMQPType) GetType() Type {
 	return b.encoding
+}
+
+func NullValue() ([]byte, uint, error) {
+	return []byte{byte(TYPE_NULL)}, 1, nil
 }

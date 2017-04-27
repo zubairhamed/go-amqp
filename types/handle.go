@@ -1,6 +1,5 @@
 package types
 
-
 func NewHandle(v uint32) *Handle {
 	return &Handle{
 		UInt: NewUInt(v),

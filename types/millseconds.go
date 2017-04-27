@@ -20,7 +20,6 @@ func (s *Milliseconds) Encode() ([]byte, uint, error) {
 	return s.UInt.Encode()
 }
 
-
 func DecodeMillisecondsField(v []byte) (val *Milliseconds, fieldLength uint, err error) {
 	iVal, fieldLength, err := DecodeUIntField(v)
 

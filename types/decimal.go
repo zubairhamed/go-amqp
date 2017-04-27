@@ -25,9 +25,7 @@ type Decimal64 struct {
 }
 
 func NewDecimal128() *Decimal128 {
-	return &Decimal128{
-
-	}
+	return &Decimal128{}
 }
 
 // 128-bit decimal number (IEEE 754-2008 decimal128)

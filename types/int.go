@@ -1,7 +1,7 @@
 package types
 
 func NewInt(v int32) *Int {
-	return &Int {
+	return &Int{
 		value: v,
 	}
 }

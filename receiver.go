@@ -1,17 +1,16 @@
 package amqp
 
-import "log"
+func NewReceiver(name string, ch chan *Event) *Receiver {
+	return &Receiver{
+		Client: Client{
+			name: name,
+			ch:   ch,
+			role: ROLE_RECEIVER,
+		},
+	}
+}
 
 type Receiver struct {
-	session *Session
-}
-
-func (r *Receiver) Receive() *Message {
-	log.Println("Receiver:Receive")
-
-	return nil
-}
-
-func (r *Receiver) Close() {
-	log.Println("Receiver:Close")
+	Client
+	//	session *Session
 }

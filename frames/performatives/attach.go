@@ -1,6 +1,11 @@
 package performatives
 
-import . "github.com/zubairhamed/go-amqp/types"
+import (
+	"errors"
+	log "github.com/Sirupsen/logrus"
+	. "github.com/zubairhamed/go-amqp/types"
+	"github.com/zubairhamed/go-amqp/util"
+)
 
 func NewAttachPerformative() *PerformativeAttach {
 	return &PerformativeAttach{}
@@ -30,23 +35,220 @@ type PerformativeAttach struct {
 	Name                 *String
 	Handle               *Handle
 	Role                 *Role
-	SendSettleMode       *SenderSettleMode
-	ReceiverSetleMode    *ReceiverSettleMode
-	Source               *String
-	Target               *String
+	SenderSettleMode     *SenderSettleMode
+	ReceiverSettleMode   *ReceiverSettleMode
+	Source               AMQPType
+	Target               AMQPType
 	Unsettled            *Map
 	IncompleteUnsettled  *Boolean
 	InitialDeliveryCount *SequenceNumber
 	MaxMessageSize       *ULong
-	OfferedCapabilities  []*Symbol
-	DesiredCapabilities  []*Symbol
+	OfferedCapabilities  *SymbolArray
+	DesiredCapabilities  *SymbolArray
 	Properties           *Fields
 }
 
 func (p *PerformativeAttach) Encode() (enc []byte, l uint, err error) {
-	return
+	bodyFieldBytes, bodyFieldLength, err := EncodeFields(
+		p.Name,
+		p.Handle,
+		p.Role,
+		p.SenderSettleMode,
+		p.ReceiverSettleMode,
+		p.Source,
+		p.Target,
+		p.Unsettled,
+		p.IncompleteUnsettled,
+		p.InitialDeliveryCount,
+		p.MaxMessageSize,
+		p.OfferedCapabilities,
+		p.DesiredCapabilities,
+		p.Properties,
+	)
+
+	performativeBytes := []byte{
+		0x00,
+		0x53,
+		byte(TYPE_PERFORMATIVE_ATTACH),
+		0xC0,
+		byte(bodyFieldLength),
+		0x08,
+	}
+
+	performativeBytes = append(performativeBytes, bodyFieldBytes...)
+
+	log.Println("Encoded Attach Performative", util.ToHex(performativeBytes))
+
+	return performativeBytes, uint(len(performativeBytes)), nil
+}
+
+func (b *PerformativeAttach) GetType() Type {
+	return TYPE_PERFORMATIVE_ATTACH
 }
 
 func (b *PerformativeAttach) Stringify() string {
 	return "Stringify: Performative Attach"
+}
+
+func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
+	op = NewAttachPerformative()
+
+	frameData, listCount, err := HandleBasePerformative(b, TYPE_PERFORMATIVE_ATTACH)
+	if err != nil {
+		return
+	}
+
+	log.Println("List Count", listCount)
+
+	remainingBytes := frameData
+	var fieldSize uint
+
+	if listCount > 0 {
+		//  name
+		op.Name, fieldSize, err = DecodeStringField(remainingBytes)
+		log.Println(op.Name)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding name Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 1 {
+		// handle
+		op.Handle, fieldSize, err = DecodeHandleField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding handle Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 2 {
+		// role
+		op.Role, fieldSize, err = DecodeRoleField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding role Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 3 {
+		// snd-settle-mode
+		op.SenderSettleMode, fieldSize, err = DecodeSenderSettleModeField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding snd-settle-mode Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 4 {
+		// rcv-settle-mode
+		op.ReceiverSettleMode, fieldSize, err = DecodeReceiverSettleModeField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding rcv-settle-mode Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 5 {
+		// source
+		log.Println("Source Field Remaining bytes", remainingBytes)
+		op.Source, fieldSize, err = DecodeStringField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding source Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 6 {
+		// target
+		op.Target, fieldSize, err = DecodeStringField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding target Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 7 {
+		// unsettled
+		op.Unsettled, fieldSize, err = DecodeMapField(remainingBytes)
+
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding unsettled Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 8 {
+		// incomplete-unsettled
+		op.IncompleteUnsettled, fieldSize, err = DecodeBooleanField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding incomplete-unsettled Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 9 {
+		// initial-delivery-count
+		op.InitialDeliveryCount, fieldSize, err = DecodeSequenceNumber(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding initial-delivery-count Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 10 {
+		// max-message-size
+		op.MaxMessageSize, fieldSize, err = DecodeULongField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding max-message-sizae Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 11 {
+		// offered-capabilities
+		op.OfferedCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding offered-capabilities Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 12 {
+		// desired-capabilities
+		op.DesiredCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding desired-capabilities Field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if listCount > 13 {
+		// properties
+		op.Properties, fieldSize, err = DecodeFieldsField(remainingBytes)
+		if err != nil {
+			log.Error("Open Performative: Error occured decoding properties field")
+			return
+		}
+		remainingBytes = remainingBytes[fieldSize:]
+	}
+
+	if len(remainingBytes) > 0 {
+		log.Println(remainingBytes)
+		err = errors.New("Attach Performative: There should not be any bytes left")
+	}
+	return
 }

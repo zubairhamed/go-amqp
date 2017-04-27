@@ -2,7 +2,7 @@ package performatives
 
 import (
 	"errors"
-	"github.com/zubairhamed/go-amqp/frames"
+	log "github.com/Sirupsen/logrus"
 	. "github.com/zubairhamed/go-amqp/types"
 )
 
@@ -32,10 +32,10 @@ type PerformativeOpen struct {
 	MaxFrameSize        *UInt
 	ChannelMax          *UShort
 	IdleTimeout         *Milliseconds
-	OutgoingLocales     []*IetfLanguageTag
-	IncomingLocales     []*IetfLanguageTag
-	OfferedCapabilities []*Symbol
-	DesiredCapabilities []*Symbol
+	OutgoingLocales     *IetfLanguageTagArray
+	IncomingLocales     *IetfLanguageTagArray
+	OfferedCapabilities *SymbolArray
+	DesiredCapabilities *SymbolArray
 	Properties          *Fields
 }
 
@@ -44,80 +44,18 @@ func (b *PerformativeOpen) Stringify() string {
 }
 
 func (p *PerformativeOpen) Encode() (enc []byte, l uint, err error) {
-	var bodyFieldBytes []byte = []byte{}
-	var bodyFieldLength uint = 0
-	var encField []byte
-	var fieldLen uint
-
-	encField, fieldLen, err = EncodeField(p.ContainerId)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.Hostname)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.MaxFrameSize)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.ChannelMax)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.IdleTimeout)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeIetfLanguageTagArrayField(p.OutgoingLocales)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeIetfLanguageTagArrayField(p.IncomingLocales)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeSymbolArrayField(p.OfferedCapabilities)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeSymbolArrayField(p.DesiredCapabilities)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.Properties)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
+	bodyFieldBytes, bodyFieldLength, err := EncodeFields(
+		p.ContainerId,
+		p.Hostname,
+		p.MaxFrameSize,
+		p.ChannelMax,
+		p.IdleTimeout,
+		p.OutgoingLocales,     // EncodeIetfLanguageTagArrayField
+		p.IncomingLocales,     // EncodeIetfLanguageTagArrayField
+		p.OfferedCapabilities, // EncodeSymbolArrayField
+		p.DesiredCapabilities, // EncodeSymbolArrayField
+		p.Properties,
+	)
 
 	performativeBytes := []byte{
 		0x00, // Constructor
@@ -140,52 +78,11 @@ func (b *PerformativeOpen) GetType() Type {
 func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 	op = NewOpenPerformative()
 
-	f, err := frames.UnmarshalFrameHeader(b)
+	frameData, listCount, err := HandleBasePerformative(b, TYPE_PERFORMATIVE_OPEN)
 	if err != nil {
 		return
 	}
 
-	doff := f.DataOffset
-	if uint32(len(b)) < f.Size {
-		err = errors.New("Malformed frame. Invalid size")
-		return
-	}
-
-	frameBytes := b[doff*4 : f.Size]
-
-	if Type(frameBytes[0]) != TYPE_CONSTRUCTOR {
-		err = errors.New("Malformed or unexpected frame. Expecting constructor.")
-		return
-	}
-
-	if Type(frameBytes[1]) != TYPE_ULONG_SMALL {
-		err = errors.New("Malformed or unexpected frame. Expecting small ulong type")
-		return
-	}
-
-	if Type(frameBytes[2]) != TYPE_PERFORMATIVE_OPEN {
-		err = errors.New("Malformed or unexpected frame. Expecting Open Performative.")
-		return
-	}
-
-	if Type(frameBytes[3]) != TYPE_LIST_8 {
-		err = errors.New("Malformed or unexpected frame. Expecting list 8")
-		return
-	}
-
-	listBytes := int(frameBytes[4])
-	listCount := frameBytes[5]
-	if listCount > 10 {
-		err = errors.New("Invalid list count. Expecting 10 or less.")
-		return
-	}
-
-	frameData := frameBytes[6:]
-
-	if len(frameData)+1 != listBytes {
-		err = errors.New("Malformed or unexpected frame. list size not equal or expected")
-		return
-	}
 	remainingBytes := frameData
 
 	var fieldSize uint
@@ -194,6 +91,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// container-id
 		op.ContainerId, fieldSize, err = DecodeStringField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding container-id Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -203,6 +101,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// hostname
 		op.Hostname, fieldSize, err = DecodeStringField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding hostname Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -212,6 +111,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// max-frame-size
 		op.MaxFrameSize, fieldSize, err = DecodeUIntField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding max-frame-size Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -221,6 +121,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// channel-max
 		op.ChannelMax, fieldSize, err = DecodeUShortField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding channel-max Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -230,6 +131,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// idle-time-out
 		op.IdleTimeout, fieldSize, err = DecodeMillisecondsField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding idle-timee-out Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -239,6 +141,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// outgoing-locales
 		op.OutgoingLocales, fieldSize, err = DecodeIetfLanguageTagArrayField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding outgoing-locales Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -248,6 +151,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// incoming-locales
 		op.IncomingLocales, fieldSize, err = DecodeIetfLanguageTagArrayField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding incoming-locales Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -257,6 +161,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// offered-capabilities
 		op.OfferedCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding offered-capabilities Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -266,6 +171,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// desired-capabiliites
 		op.DesiredCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding desired-capabilities Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -275,13 +181,14 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// properties
 		op.Properties, fieldSize, err = DecodeFieldsField(remainingBytes)
 		if err != nil {
+			log.Error("Open Performative: Error occured decoding properties Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
 	}
 
 	if len(remainingBytes) > 0 {
-		err = errors.New("There should not be any bytes left")
+		err = errors.New("Disposition Performative: There should not be any bytes left")
 	}
 	return
 }

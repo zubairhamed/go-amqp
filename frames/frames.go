@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"log"
 	"net"
 )
 
@@ -153,6 +154,7 @@ func SendHandshake(c net.Conn) (int, error) {
 
 func HandleHandshake(b []byte) error {
 	if !bytes.Equal(b[0:8], HANDSHAKE_MSG) {
+		log.Println(b)
 		return errors.New("Invalid handshake message")
 	}
 	return nil

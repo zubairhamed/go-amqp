@@ -2,7 +2,6 @@ package performatives
 
 import (
 	"errors"
-	. "github.com/zubairhamed/go-amqp/frames"
 	. "github.com/zubairhamed/go-amqp/types"
 )
 
@@ -30,72 +29,22 @@ type PerformativeBegin struct {
 	IncomingWindow      *UInt
 	OutgoingWindow      *UInt
 	HandleMax           *Handle
-	OfferedCapabilities []*Symbol
-	DesiredCapabilities []*Symbol
+	OfferedCapabilities *SymbolArray
+	DesiredCapabilities *SymbolArray
 	Properties          *Fields
 }
 
 func (p *PerformativeBegin) Encode() (enc []byte, l uint, err error) {
-	var bodyFieldBytes []byte = []byte{}
-	var bodyFieldLength uint = 0
-	var encField []byte
-	var fieldLen uint
-
-	encField, fieldLen, err = EncodeField(p.RemoteChannel)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.NextOutgoingId)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.IncomingWindow)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.OutgoingWindow)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.HandleMax)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeSymbolArrayField(p.OfferedCapabilities)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeSymbolArrayField(p.DesiredCapabilities)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
-
-	encField, fieldLen, err = EncodeField(p.Properties)
-	if err != nil {
-		return
-	}
-	bodyFieldLength += fieldLen
-	bodyFieldBytes = append(bodyFieldBytes, encField...)
+	bodyFieldBytes, bodyFieldLength, err := EncodeFields(
+		p.RemoteChannel,
+		p.NextOutgoingId,
+		p.IncomingWindow,
+		p.OutgoingWindow,
+		p.HandleMax,
+		p.OfferedCapabilities,
+		p.DesiredCapabilities,
+		p.Properties,
+	)
 
 	performativeBytes := []byte{
 		0x00,
@@ -122,56 +71,14 @@ func (b *PerformativeBegin) GetType() Type {
 func DecodeBeginPerformative(b []byte) (op *PerformativeBegin, err error) {
 	op = NewBeginPerformative()
 
-	f, err := UnmarshalFrameHeader(b)
+	frameData, listCount, err := HandleBasePerformative(b, TYPE_PERFORMATIVE_BEGIN)
 	if err != nil {
 		return
 	}
 
-	doff := f.DataOffset
-	if uint32(len(b)) < f.Size {
-		err = errors.New("Malformed frame. Invalid size")
-		return
-	}
-
-	frameBytes := b[doff*4 : f.Size]
-
-	if Type(frameBytes[0]) != TYPE_CONSTRUCTOR {
-		err = errors.New("Malformed or unexpected frame. Expecting constructor.")
-		return
-	}
-
-	if Type(frameBytes[1]) != TYPE_ULONG_SMALL {
-		err = errors.New("Malformed or unexpected frame. Expecting small ulong type")
-		return
-	}
-
-	if Type(frameBytes[2]) != TYPE_PERFORMATIVE_BEGIN {
-		err = errors.New("Malformed or unexpected frame. Expecting Begin Performative.")
-		return
-	}
-
-	if Type(frameBytes[3]) != TYPE_LIST_8 {
-		err = errors.New("Malformed or unexpected frame. Expecting list 8")
-		return
-	}
-
-	listBytes := int(frameBytes[4])
-	listCount := frameBytes[5]
-	if listCount > 8 {
-		err = errors.New("Invalid list count. Expecting 8 or less.")
-		return
-	}
-
-	frameData := frameBytes[6:]
-
-	if len(frameData)+1 != listBytes {
-		err = errors.New("Malformed or unexpected frame. list size not equal or expected")
-		return
-	}
 	remainingBytes := frameData
 
 	var fieldSize uint
-
 	if listCount > 0 {
 		// remote-channel
 		op.RemoteChannel, fieldSize, err = DecodeUShortField(remainingBytes)
@@ -245,7 +152,7 @@ func DecodeBeginPerformative(b []byte) (op *PerformativeBegin, err error) {
 	}
 
 	if len(remainingBytes) > 0 {
-		err = errors.New("There should not be any bytes left")
+		err = errors.New("Begin Performative: There should not be any bytes left")
 	}
 	return
 }

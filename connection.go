@@ -1,28 +1,36 @@
 package amqp
 
 import (
+	"encoding/binary"
+	"errors"
+	"fmt"
 	. "github.com/zubairhamed/go-amqp/frames"
 	. "github.com/zubairhamed/go-amqp/frames/performatives"
-	"github.com/zubairhamed/go-amqp/types"
+	. "github.com/zubairhamed/go-amqp/types"
 	"log"
 	"net"
-	"encoding/binary"
 )
 
-func NewConnection(url string) *Connection {
+func NewConnection(url, nodeAddress string) *Connection {
 	return &Connection{
-		url:       url,
-		connected: false,
+		url:         url,
+		nodeAddress: nodeAddress,
+		connected:   false,
 	}
 }
 
 type Connection struct {
-	netConn   net.Conn
-	url       string
-	connected bool
+	netConn     net.Conn
+	nodeAddress string
+	url         string
+	connected   bool
+	name        string
 }
 
-func (c *Connection) doConnect() (err error) {
+func (c *Connection) doConnect(fn func(b []byte), connName string) (err error) {
+
+	c.name = connName
+
 	// Connect
 	conn, err := net.Dial("tcp", c.url)
 	if err != nil {
@@ -34,6 +42,7 @@ func (c *Connection) doConnect() (err error) {
 	var readBuf []byte
 
 	// Handshake
+	LogOut("HANDSHAKE", c.name)
 	SendHandshake(conn)
 	readBuf, err = ReadFromConnection(conn)
 	err = HandleHandshake(readBuf)
@@ -43,41 +52,90 @@ func (c *Connection) doConnect() (err error) {
 
 	// Send Open Performative
 	openPerformative := NewOpenPerformative()
-	openPerformative.ContainerId = types.NewString("MyContainer")
+	openPerformative.ContainerId = NewString("MyContainer")
 
-
+	LogOut("OPEN", c.name)
 	_, err = c.SendPerformative(openPerformative)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	readBuf, err = ReadFromConnection(conn)
-	openPerformative, err = DecodeOpenPerformative(readBuf)
+	// dispatch loop
+	go c.handleMessages(conn, fn)
+
+	return
+}
+
+func (c *Connection) handleMessages(conn net.Conn, fn func(b []byte)) {
+	buf := []byte{}
+	tmp := make([]byte, 2014)
+
+	for {
+		_, err := conn.Read(tmp)
+		if err != nil {
+			fmt.Println("Error reading:", err.Error())
+		}
+
+		buf := append(buf, tmp...)
+
+		// Get frame
+		l, fb, err := c.extractFrame(buf)
+		if err != nil {
+			log.Println("An error occcured dispatching frame", err.Error())
+		}
+
+		buf = buf[l:]
+
+		// Dispatch frame
+		fn(fb)
+	}
+}
+
+func (c *Connection) extractFrame(b []byte) (n int, fr []byte, err error) {
+	f, err := UnmarshalFrameHeader(b)
 	if err != nil {
-		log.Panic(err)
 		return
 	}
 
-	DescribeType(openPerformative)
-
-	// Read Incoming Open Performative
-	beginPerformative := NewBeginPerformative()
-	beginPerformative.NextOutgoingId = types.NewTransferNumber(4294967293)
-	beginPerformative.IncomingWindow = types.NewUInt(2048)
-	beginPerformative.OutgoingWindow = types.NewUInt(2048)
-	beginPerformative.HandleMax = types.NewHandle(7)
-
-	_, err = c.SendPerformative(beginPerformative)
-	readBuf, err = ReadFromConnection(conn)
-	beginPerformative, err = DecodeBeginPerformative(readBuf)
-	if err != nil {
-		log.Panic(err)
+	doff := f.DataOffset
+	if uint32(len(b)) < f.Size {
+		err = errors.New("Malformed frame. Invalid size")
 		return
 	}
 
-	DescribeType(beginPerformative)
+	frameBytes := b[doff*4 : f.Size]
 
-	c.connected = true
+	if Type(frameBytes[0]) != TYPE_CONSTRUCTOR {
+		err = errors.New("Malformed or unexpected frame. Expecting constructor.")
+		return
+	}
+
+	if Type(frameBytes[1]) != TYPE_ULONG_SMALL {
+		err = errors.New("Malformed or unexpected frame. Expecting small ulong type")
+		return
+	}
+
+	perf := Type(frameBytes[2])
+	if perf != TYPE_PERFORMATIVE_ATTACH &&
+		perf != TYPE_PERFORMATIVE_END &&
+		perf != TYPE_PERFORMATIVE_OPEN &&
+		perf != TYPE_PERFORMATIVE_BEGIN &&
+		perf != TYPE_PERFORMATIVE_DISPOSITION &&
+		perf != TYPE_PERFORMATIVE_FLOW &&
+		perf != TYPE_PERFORMATIVE_TRANSFER &&
+		perf != TYPE_PERFORMATIVE_CLOSE &&
+		perf != TYPE_PERFORMATIVE_DETACH {
+
+		err = errors.New("Malformed or unexpected frame. Expecting a Performative")
+	}
+
+	if Type(frameBytes[3]) != TYPE_LIST_8 {
+		err = errors.New("Malformed or unexpected frame. Expecting list 8")
+		return
+	}
+
+	n = len(frameBytes)
+	fr = b[:f.Size]
 
 	return
 }
@@ -86,8 +144,7 @@ func (c *Connection) Close() {
 	log.Println("Connection:Close")
 }
 
-
-func (c *Connection) Write(b []byte) (int, error){
+func (c *Connection) Write(b []byte) (int, error) {
 	return c.netConn.Write(b)
 }
 

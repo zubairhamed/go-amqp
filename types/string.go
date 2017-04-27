@@ -29,7 +29,6 @@ func (b *String) Stringify() string {
 }
 
 func DecodeStringField(v []byte) (val *String, fieldLength uint, err error) {
-
 	ctor := Type(v[0])
 
 	if ctor == TYPE_NULL {
@@ -66,7 +65,7 @@ func DecodeStringField(v []byte) (val *String, fieldLength uint, err error) {
 
 func EncodeStringField(s *String) ([]byte, uint, error) {
 	if s == nil {
-		return []byte{byte(TYPE_NULL)}, 1, nil
+		return NullValue()
 	}
 
 	v := s.value
