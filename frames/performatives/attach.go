@@ -2,9 +2,8 @@ package performatives
 
 import (
 	"errors"
-	log "github.com/Sirupsen/logrus"
 	. "github.com/zubairhamed/go-amqp/types"
-	"github.com/zubairhamed/go-amqp/util"
+	"log"
 )
 
 func NewAttachPerformative() *PerformativeAttach {
@@ -77,8 +76,6 @@ func (p *PerformativeAttach) Encode() (enc []byte, l uint, err error) {
 
 	performativeBytes = append(performativeBytes, bodyFieldBytes...)
 
-	log.Println("Encoded Attach Performative", util.ToHex(performativeBytes))
-
 	return performativeBytes, uint(len(performativeBytes)), nil
 }
 
@@ -98,17 +95,14 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		return
 	}
 
-	log.Println("List Count", listCount)
-
 	remainingBytes := frameData
 	var fieldSize uint
 
 	if listCount > 0 {
 		//  name
 		op.Name, fieldSize, err = DecodeStringField(remainingBytes)
-		log.Println(op.Name)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding name Field")
+			log.Println("Open Performative: Error occured decoding name Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -118,7 +112,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// handle
 		op.Handle, fieldSize, err = DecodeHandleField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding handle Field")
+			log.Println("Open Performative: Error occured decoding handle Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -128,7 +122,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// role
 		op.Role, fieldSize, err = DecodeRoleField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding role Field")
+			log.Println("Open Performative: Error occured decoding role Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -138,7 +132,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// snd-settle-mode
 		op.SenderSettleMode, fieldSize, err = DecodeSenderSettleModeField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding snd-settle-mode Field")
+			log.Println("Open Performative: Error occured decoding snd-settle-mode Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -148,7 +142,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// rcv-settle-mode
 		op.ReceiverSettleMode, fieldSize, err = DecodeReceiverSettleModeField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding rcv-settle-mode Field")
+			log.Println("Open Performative: Error occured decoding rcv-settle-mode Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -156,10 +150,9 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 
 	if listCount > 5 {
 		// source
-		log.Println("Source Field Remaining bytes", remainingBytes)
 		op.Source, fieldSize, err = DecodeStringField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding source Field")
+			log.Println("Open Performative: Error occured decoding source Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -169,7 +162,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// target
 		op.Target, fieldSize, err = DecodeStringField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding target Field")
+			log.Println("Open Performative: Error occured decoding target Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -180,7 +173,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		op.Unsettled, fieldSize, err = DecodeMapField(remainingBytes)
 
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding unsettled Field")
+			log.Println("Open Performative: Error occured decoding unsettled Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -190,7 +183,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// incomplete-unsettled
 		op.IncompleteUnsettled, fieldSize, err = DecodeBooleanField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding incomplete-unsettled Field")
+			log.Println("Open Performative: Error occured decoding incomplete-unsettled Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -200,7 +193,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// initial-delivery-count
 		op.InitialDeliveryCount, fieldSize, err = DecodeSequenceNumber(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding initial-delivery-count Field")
+			log.Println("Open Performative: Error occured decoding initial-delivery-count Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -210,7 +203,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// max-message-size
 		op.MaxMessageSize, fieldSize, err = DecodeULongField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding max-message-sizae Field")
+			log.Println("Open Performative: Error occured decoding max-message-sizae Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -220,7 +213,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// offered-capabilities
 		op.OfferedCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding offered-capabilities Field")
+			log.Println("Open Performative: Error occured decoding offered-capabilities Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -230,7 +223,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// desired-capabilities
 		op.DesiredCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding desired-capabilities Field")
+			log.Println("Open Performative: Error occured decoding desired-capabilities Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -240,7 +233,7 @@ func DecodeAttachPerformative(b []byte) (op *PerformativeAttach, err error) {
 		// properties
 		op.Properties, fieldSize, err = DecodeFieldsField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding properties field")
+			log.Println("Open Performative: Error occured decoding properties field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]

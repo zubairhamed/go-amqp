@@ -46,6 +46,7 @@ const (
 	TYPE_FLOAT                    = Type(0x72)
 	TYPE_CHAR                     = Type(0x73)
 	TYPE_DECIMAL32                = Type(0x74)
+	TYPE_AMQP_VALUE               = Type(0x77)
 	TYPE_ULONG                    = Type(0x80)
 	TYPE_LONG                     = Type(0x81)
 	TYPE_DOUBLE                   = Type(0x82)

@@ -28,6 +28,18 @@ func (b *String) Stringify() string {
 	return b.Value()
 }
 
+func (b *String) GetType() Type {
+	v := b.value
+	vlen := len(v)
+
+	if vlen == 0 || vlen < 256 {
+		return TYPE_STRING_8_UTF8
+	} else if vlen > 255 && vlen < 4294967295 {
+		return TYPE_STRING_32_UTF8
+	}
+	return Type(0x00)
+}
+
 func DecodeStringField(v []byte) (val *String, fieldLength uint, err error) {
 	ctor := Type(v[0])
 

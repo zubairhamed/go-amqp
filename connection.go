@@ -11,18 +11,28 @@ import (
 	"net"
 )
 
-func NewConnection(url, nodeAddress string) *Connection {
-	return &Connection{
+func NewConnectInfo(url, nodeAddress string) *ConnectInfo {
+	return &ConnectInfo{
 		url:         url,
 		nodeAddress: nodeAddress,
+	}
+}
+
+type ConnectInfo struct {
+	nodeAddress string
+	url         string
+}
+
+func NewConnection(c *ConnectInfo) *Connection {
+	return &Connection{
+		connectInfo: c,
 		connected:   false,
 	}
 }
 
 type Connection struct {
+	connectInfo *ConnectInfo
 	netConn     net.Conn
-	nodeAddress string
-	url         string
 	connected   bool
 	name        string
 }
@@ -32,7 +42,7 @@ func (c *Connection) doConnect(fn func(b []byte), connName string) (err error) {
 	c.name = connName
 
 	// Connect
-	conn, err := net.Dial("tcp", c.url)
+	conn, err := net.Dial("tcp", c.connectInfo.url)
 	if err != nil {
 		panic(err)
 	}
@@ -52,7 +62,7 @@ func (c *Connection) doConnect(fn func(b []byte), connName string) (err error) {
 
 	// Send Open Performative
 	openPerformative := NewOpenPerformative()
-	openPerformative.ContainerId = NewString("MyContainer")
+	openPerformative.ContainerId = NewString("ContainerID-" + c.name)
 
 	LogOut("OPEN", c.name)
 	_, err = c.SendPerformative(openPerformative)
@@ -67,55 +77,49 @@ func (c *Connection) doConnect(fn func(b []byte), connName string) (err error) {
 }
 
 func (c *Connection) handleMessages(conn net.Conn, fn func(b []byte)) {
-	buf := []byte{}
-	tmp := make([]byte, 2014)
 
 	for {
-		_, err := conn.Read(tmp)
+		buf := []byte{}
+		tmp := make([]byte, 2014)
+		bytesRead, err := conn.Read(tmp)
 		if err != nil {
 			fmt.Println("Error reading:", err.Error())
 		}
 
-		buf := append(buf, tmp...)
+		buf = append(buf, tmp[:bytesRead]...)
 
-		// Get frame
-		l, fb, err := c.extractFrame(buf)
+		_, buf, err = c.extractFrameData(buf)
 		if err != nil {
-			log.Println("An error occcured dispatching frame", err.Error())
+			fmt.Println("Error reading:", err.Error())
+			return
 		}
+		for len(buf) > 0 {
+			// Get frame`
+			l, fb, err := c.extractFrame(buf)
+			if err != nil {
+				log.Println("An error occcured dispatching frame", err.Error())
+			}
 
-		buf = buf[l:]
+			buf = buf[l:]
 
-		// Dispatch frame
-		fn(fb)
+			// Dispatch frame
+			fn(fb)
+		}
 	}
 }
 
 func (c *Connection) extractFrame(b []byte) (n int, fr []byte, err error) {
-	f, err := UnmarshalFrameHeader(b)
-	if err != nil {
-		return
-	}
-
-	doff := f.DataOffset
-	if uint32(len(b)) < f.Size {
-		err = errors.New("Malformed frame. Invalid size")
-		return
-	}
-
-	frameBytes := b[doff*4 : f.Size]
-
-	if Type(frameBytes[0]) != TYPE_CONSTRUCTOR {
+	if Type(b[0]) != TYPE_CONSTRUCTOR {
 		err = errors.New("Malformed or unexpected frame. Expecting constructor.")
 		return
 	}
 
-	if Type(frameBytes[1]) != TYPE_ULONG_SMALL {
+	if Type(b[1]) != TYPE_ULONG_SMALL {
 		err = errors.New("Malformed or unexpected frame. Expecting small ulong type")
 		return
 	}
 
-	perf := Type(frameBytes[2])
+	perf := Type(b[2])
 	if perf != TYPE_PERFORMATIVE_ATTACH &&
 		perf != TYPE_PERFORMATIVE_END &&
 		perf != TYPE_PERFORMATIVE_OPEN &&
@@ -129,13 +133,31 @@ func (c *Connection) extractFrame(b []byte) (n int, fr []byte, err error) {
 		err = errors.New("Malformed or unexpected frame. Expecting a Performative")
 	}
 
-	if Type(frameBytes[3]) != TYPE_LIST_8 {
+	if Type(b[3]) != TYPE_LIST_8 {
 		err = errors.New("Malformed or unexpected frame. Expecting list 8")
 		return
 	}
 
-	n = len(frameBytes)
-	fr = b[:f.Size]
+	n = int(b[4]) + 5
+	fr = b[:n]
+
+	return
+}
+
+func (c *Connection) extractFrameData(b []byte) (n int, fr []byte, err error) {
+	f, err := UnmarshalFrameHeader(b)
+	if err != nil {
+		return
+	}
+
+	doff := f.DataOffset
+	if uint32(len(b)) < f.Size {
+		err = errors.New("Malformed frame. Invalid size")
+		return
+	}
+
+	fr = b[doff*4 : f.Size]
+	n = len(fr)
 
 	return
 }
@@ -159,6 +181,5 @@ func (c *Connection) SendPerformative(p Performative) (int, error) {
 	binary.BigEndian.PutUint32(frameSizeBytes, frameSize)
 
 	frameContent := EncodeFrame(b)
-
 	return c.Write(frameContent)
 }

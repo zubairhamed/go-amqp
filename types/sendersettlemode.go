@@ -1,9 +1,5 @@
 package types
 
-import (
-	"log"
-)
-
 func NewSenderSettleMode(v byte) *SenderSettleMode {
 	r := &SenderSettleMode{}
 	if v == 0 {
@@ -59,7 +55,6 @@ func (b *SenderSettleMode) Stringify() string {
 
 func DecodeSenderSettleModeField(v []byte) (val *SenderSettleMode, fieldLength uint, err error) {
 	ctor := Type(v[0])
-	log.Println("snd", ctor)
 	if ctor == TYPE_NULL {
 		fieldLength = 1
 		return

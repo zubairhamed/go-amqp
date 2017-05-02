@@ -3,7 +3,6 @@ package performatives
 import (
 	"errors"
 	"fmt"
-	. "github.com/zubairhamed/go-amqp/frames"
 	. "github.com/zubairhamed/go-amqp/types"
 )
 
@@ -16,18 +15,7 @@ type BasePerformative struct {
 }
 
 func HandleBasePerformative(b []byte, expectedPerformative Type) (frameData []byte, listCount int, err error) {
-	f, err := UnmarshalFrameHeader(b)
-	if err != nil {
-		return
-	}
-
-	doff := f.DataOffset
-	if uint32(len(b)) < f.Size {
-		err = errors.New("Malformed frame. Invalid size")
-		return
-	}
-
-	frameBytes := b[doff*4 : f.Size]
+	frameBytes := b
 
 	if Type(frameBytes[0]) != TYPE_CONSTRUCTOR {
 		err = errors.New("Malformed or unexpected frame. Expecting constructor.")

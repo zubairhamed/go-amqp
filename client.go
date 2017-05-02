@@ -7,14 +7,18 @@ import (
 )
 
 type Client struct {
-	name string
-	ch   chan *Event
-	conn *Connection
-	role RoleType
+	name           string
+	ch             chan *Event
+	conn           *Connection
+	connectionInfo *ConnectInfo
+	role           RoleType
 }
 
-func (c *Client) Dial(conn *Connection) (err error) {
-	c.conn = conn
+func (c *Client) Dial(connInfo *ConnectInfo) (err error) {
+
+	c.conn = NewConnection(connInfo)
+	c.connectionInfo = connInfo
+	conn := c.conn
 
 	if !conn.connected {
 		err = conn.doConnect(c.dispatchPerformative, c.name)
@@ -30,7 +34,7 @@ func (r *Client) Close() {
 }
 
 func (c *Client) dispatchPerformative(b []byte) {
-	perfByte := Type(b[10])
+	perfByte := Type(b[2])
 
 	switch perfByte {
 	case TYPE_PERFORMATIVE_ATTACH:
@@ -40,6 +44,7 @@ func (c *Client) dispatchPerformative(b []byte) {
 			log.Println(err.Error())
 			return
 		}
+		log.Println("ATTACHINFO", perf.Handle.Stringify())
 		c.handlePerformativeAttach(perf)
 
 	case TYPE_PERFORMATIVE_DETACH:
@@ -52,7 +57,6 @@ func (c *Client) dispatchPerformative(b []byte) {
 		c.handlePerformativeDetach(perf)
 
 	case TYPE_PERFORMATIVE_CLOSE:
-		LogIn("CLOSE", c.name)
 		perf, err := DecodeClosePerformative(b)
 		if err != nil {
 			log.Println(err.Error())
@@ -144,7 +148,7 @@ func (c *Client) handleBeginPerformative(p *PerformativeBegin) {
 	}
 
 	attach.Target = NewFields(map[string]AMQPType{
-		"Address": NewString(c.conn.nodeAddress),
+		"Address": NewString(c.connectionInfo.nodeAddress),
 	})
 	attach.InitialDeliveryCount = NewSequenceNumber(0)
 
@@ -161,7 +165,10 @@ func (c *Client) handlePerformativeDetach(p *PerformativeDetach) {
 }
 
 func (c *Client) handleClosePerformative(p *PerformativeClose) {
+	LogIn("CLOSE", c.name)
+	log.Println("Close", p.Error.Description.Stringify())
 	c.ch <- NewEvent(p, EVENT_MSG_CLOSE)
+
 }
 
 func (c *Client) handlePerformativeFlow(p *PerformativeFlow) {

@@ -2,8 +2,8 @@ package performatives
 
 import (
 	"errors"
-	log "github.com/Sirupsen/logrus"
 	. "github.com/zubairhamed/go-amqp/types"
+	"log"
 )
 
 func NewOpenPerformative() *PerformativeOpen {
@@ -91,7 +91,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// container-id
 		op.ContainerId, fieldSize, err = DecodeStringField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding container-id Field")
+			log.Println("Open Performative: Error occured decoding container-id Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -101,7 +101,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// hostname
 		op.Hostname, fieldSize, err = DecodeStringField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding hostname Field")
+			log.Println("Open Performative: Error occured decoding hostname Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -111,7 +111,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// max-frame-size
 		op.MaxFrameSize, fieldSize, err = DecodeUIntField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding max-frame-size Field")
+			log.Println("Open Performative: Error occured decoding max-frame-size Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -121,7 +121,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// channel-max
 		op.ChannelMax, fieldSize, err = DecodeUShortField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding channel-max Field")
+			log.Println("Open Performative: Error occured decoding channel-max Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -131,7 +131,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// idle-time-out
 		op.IdleTimeout, fieldSize, err = DecodeMillisecondsField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding idle-timee-out Field")
+			log.Println("Open Performative: Error occured decoding idle-timee-out Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -141,7 +141,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// outgoing-locales
 		op.OutgoingLocales, fieldSize, err = DecodeIetfLanguageTagArrayField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding outgoing-locales Field")
+			log.Println("Open Performative: Error occured decoding outgoing-locales Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -151,7 +151,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// incoming-locales
 		op.IncomingLocales, fieldSize, err = DecodeIetfLanguageTagArrayField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding incoming-locales Field")
+			log.Println("Open Performative: Error occured decoding incoming-locales Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -161,7 +161,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// offered-capabilities
 		op.OfferedCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding offered-capabilities Field")
+			log.Println("Open Performative: Error occured decoding offered-capabilities Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -171,7 +171,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// desired-capabiliites
 		op.DesiredCapabilities, fieldSize, err = DecodeSymbolArrayField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding desired-capabilities Field")
+			log.Println("Open Performative: Error occured decoding desired-capabilities Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]
@@ -181,7 +181,7 @@ func DecodeOpenPerformative(b []byte) (op *PerformativeOpen, err error) {
 		// properties
 		op.Properties, fieldSize, err = DecodeFieldsField(remainingBytes)
 		if err != nil {
-			log.Error("Open Performative: Error occured decoding properties Field")
+			log.Println("Open Performative: Error occured decoding properties Field")
 			return
 		}
 		remainingBytes = remainingBytes[fieldSize:]

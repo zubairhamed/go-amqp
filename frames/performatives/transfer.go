@@ -39,6 +39,7 @@ type PerformativeTransfer struct {
 	Resume             *Boolean
 	Aborted            *Boolean
 	Batchable          *Boolean
+	Value              *AMQPValue
 }
 
 func (b *PerformativeTransfer) GetType() Type {
@@ -58,6 +59,7 @@ func (p *PerformativeTransfer) Encode() (enc []byte, l uint, err error) {
 		p.Resume,
 		p.Aborted,
 		p.Batchable,
+		p.Value,
 	)
 
 	performativeBytes := []byte{

@@ -2,10 +2,11 @@ package main
 
 import (
 	. "github.com/zubairhamed/go-amqp"
+	"log"
 )
 
 func main() {
-	conn := NewConnection(":5672", "my_queue")
+	conn := NewConnectInfo(":5672", "my_queue")
 	var err error
 
 	senderEvents := make(chan *Event)
@@ -22,38 +23,19 @@ func main() {
 		panic(err.Error())
 	}
 
+	// 10 times, create a message and send to broker
 	outMsg := NewMessage()
 	s.Send(outMsg)
 
+	// Close Sender and Receiver after 10 times
+
 	for {
 		select {
-		case evt, open := <-senderEvents:
-			if open {
-				switch evt.Type {
-				case EVENT_MSG_OPEN:
-				case EVENT_MSG_ATTACH:
-				case EVENT_MSG_BEGIN:
-				case EVENT_MSG_CLOSE:
-				case EVENT_MSG_DETACH:
-				case EVENT_MSG_DISPOSITION:
-				case EVENT_MSG_END:
-				case EVENT_MSG_FLOW:
-				case EVENT_MSG_TRANSFER:
-				}
-			}
-
 		case evt, open := <-receiverEvents:
 			if open {
 				switch evt.Type {
-				case EVENT_MSG_OPEN:
-				case EVENT_MSG_ATTACH:
-				case EVENT_MSG_BEGIN:
-				case EVENT_MSG_CLOSE:
-				case EVENT_MSG_DETACH:
-				case EVENT_MSG_DISPOSITION:
-				case EVENT_MSG_END:
-				case EVENT_MSG_FLOW:
 				case EVENT_MSG_TRANSFER:
+					log.Println("Got message from sender..", evt.Performative)
 				}
 			}
 		}
