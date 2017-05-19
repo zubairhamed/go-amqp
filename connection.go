@@ -9,6 +9,8 @@ import (
 	. "github.com/zubairhamed/go-amqp/types"
 	"log"
 	"net"
+	"sync"
+	"github.com/zubairhamed/go-amqp/util"
 )
 
 func NewConnectInfo(url, nodeAddress string) *ConnectInfo {
@@ -35,6 +37,7 @@ type Connection struct {
 	netConn     net.Conn
 	connected   bool
 	name        string
+	beginWg     sync.WaitGroup
 }
 
 func (c *Connection) doConnect(fn func(b []byte), connName string) (err error) {
@@ -55,6 +58,7 @@ func (c *Connection) doConnect(fn func(b []byte), connName string) (err error) {
 	LogOut("HANDSHAKE", c.name)
 	SendHandshake(conn)
 	readBuf, err = ReadFromConnection(conn)
+	LogIn("HANDSHAKE", c.name)
 	err = HandleHandshake(readBuf)
 	if err != nil {
 		panic(err.Error())
@@ -64,6 +68,9 @@ func (c *Connection) doConnect(fn func(b []byte), connName string) (err error) {
 	openPerformative := NewOpenPerformative()
 	openPerformative.ContainerId = NewString("ContainerID-" + c.name)
 
+	// TODO (?)
+	openPerformative.MaxFrameSize = NewUInt(16384)
+
 	LogOut("OPEN", c.name)
 	_, err = c.SendPerformative(openPerformative)
 	if err != nil {
@@ -71,7 +78,9 @@ func (c *Connection) doConnect(fn func(b []byte), connName string) (err error) {
 	}
 
 	// dispatch loop
+	c.beginWg.Add(1)
 	go c.handleMessages(conn, fn)
+	c.beginWg.Wait()
 
 	return
 }
@@ -82,33 +91,66 @@ func (c *Connection) handleMessages(conn net.Conn, fn func(b []byte)) {
 		buf := []byte{}
 		tmp := make([]byte, 2014)
 		bytesRead, err := conn.Read(tmp)
+		log.Println("-------- Reading of Bytes -------")
+		log.Println("BYTES READ: ", util.ToHex(tmp))
+		log.Println("BYTES READ HEX: ", util.ToHex(tmp[:bytesRead]))
+		log.Println("BYTES READ STRING: ", string(tmp[:bytesRead]))
 		if err != nil {
 			fmt.Println("Error reading:", err.Error())
 		}
 
-		buf = append(buf, tmp[:bytesRead]...)
-
-		_, buf, err = c.extractFrameData(buf)
+		// Extract frame data and append to buf
+		// Extract Frame Data
+		_, b, err := c.extractFrameData(tmp)
 		if err != nil {
 			fmt.Println("Error reading:", err.Error())
 			return
 		}
+
+		buf = append(buf, b...)
+
 		for len(buf) > 0 {
-			// Get frame`
-			l, fb, err := c.extractFrame(buf)
+			// Get frame
+			l, fb, err := c.extractPerformative(buf)
+			log.Println("read in frame length", l)
 			if err != nil {
 				log.Println("An error occcured dispatching frame", err.Error())
 			}
 
 			buf = buf[l:]
+			log.Println("New Buffer is", util.ToHex(buf))
 
 			// Dispatch frame
+			log.Println("Dispatching", util.ToHex(fb))
+			log.Println("Dispatching (string)", string(fb))
 			fn(fb)
 		}
 	}
 }
 
-func (c *Connection) extractFrame(b []byte) (n int, fr []byte, err error) {
+func (c *Connection) Close() {
+	log.Println("Connection:Close")
+}
+
+func (c *Connection) Write(b []byte) (int, error) {
+	return c.netConn.Write(b)
+}
+
+func (c *Connection) SendPerformative(p Performative) (int, error) {
+	b, _, err := p.Encode()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var frameSize uint32 = 8 + uint32(len(b))
+	var frameSizeBytes = make([]byte, 4)
+	binary.BigEndian.PutUint32(frameSizeBytes, frameSize)
+
+	frameContent := EncodeFrame(b)
+	return c.Write(frameContent)
+}
+
+func (c *Connection) extractPerformative(b []byte) (n int, fr []byte, err error) {
 	if Type(b[0]) != TYPE_CONSTRUCTOR {
 		err = errors.New("Malformed or unexpected frame. Expecting constructor.")
 		return
@@ -144,6 +186,7 @@ func (c *Connection) extractFrame(b []byte) (n int, fr []byte, err error) {
 	return
 }
 
+
 func (c *Connection) extractFrameData(b []byte) (n int, fr []byte, err error) {
 	f, err := UnmarshalFrameHeader(b)
 	if err != nil {
@@ -160,26 +203,4 @@ func (c *Connection) extractFrameData(b []byte) (n int, fr []byte, err error) {
 	n = len(fr)
 
 	return
-}
-
-func (c *Connection) Close() {
-	log.Println("Connection:Close")
-}
-
-func (c *Connection) Write(b []byte) (int, error) {
-	return c.netConn.Write(b)
-}
-
-func (c *Connection) SendPerformative(p Performative) (int, error) {
-	b, _, err := p.Encode()
-	if err != nil {
-		panic(err.Error())
-	}
-
-	var frameSize uint32 = 8 + uint32(len(b))
-	var frameSizeBytes = make([]byte, 4)
-	binary.BigEndian.PutUint32(frameSizeBytes, frameSize)
-
-	frameContent := EncodeFrame(b)
-	return c.Write(frameContent)
 }

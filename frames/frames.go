@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	. "github.com/zubairhamed/go-amqp/types"
 	"log"
 	"net"
+	"github.com/zubairhamed/go-amqp/util"
 )
 
 const MINIMUM_FRAME_SIZE = 8
@@ -88,11 +90,6 @@ func UnmarshalProtocolHeader(b []byte) (error, *ProtocolHeader) {
 	return nil, h
 }
 
-func UnmarshalAMQPFrame(b []byte) (error, *AMQPFrame) {
-
-	return nil, nil
-}
-
 type ProtocolHeader struct {
 	ProtocolType     byte
 	ProtocolMajor    byte
@@ -153,9 +150,61 @@ func SendHandshake(c net.Conn) (int, error) {
 }
 
 func HandleHandshake(b []byte) error {
+	log.Println(util.ToHex(b))
 	if !bytes.Equal(b[0:8], HANDSHAKE_MSG) {
 		log.Println(b)
 		return errors.New("Invalid handshake message")
 	}
 	return nil
+}
+
+func ValidateFrame(b []byte) (err error) {
+	if Type(b[0]) != TYPE_CONSTRUCTOR {
+		err = errors.New("Malformed or unexpected frame. Expecting constructor.")
+		return
+	}
+
+	if Type(b[1]) != TYPE_ULONG_SMALL {
+		err = errors.New("Malformed or unexpected frame. Expecting small ulong type")
+		return
+	}
+
+	perf := Type(b[2])
+	if perf != TYPE_PERFORMATIVE_ATTACH &&
+		perf != TYPE_PERFORMATIVE_END &&
+		perf != TYPE_PERFORMATIVE_OPEN &&
+		perf != TYPE_PERFORMATIVE_BEGIN &&
+		perf != TYPE_PERFORMATIVE_DISPOSITION &&
+		perf != TYPE_PERFORMATIVE_FLOW &&
+		perf != TYPE_PERFORMATIVE_TRANSFER &&
+		perf != TYPE_PERFORMATIVE_CLOSE &&
+		perf != TYPE_PERFORMATIVE_DETACH {
+
+		err = errors.New("Malformed or unexpected frame. Expecting a Performative")
+	}
+
+	if Type(b[3]) != TYPE_LIST_8 {
+		err = errors.New("Malformed or unexpected frame. Expecting list 8")
+		return
+	}
+
+	return
+}
+
+func ExtractPerformative(b []byte) (n int, fr []byte, err error) {
+	f, err := UnmarshalFrameHeader(b)
+	if err != nil {
+		return
+	}
+
+	doff := f.DataOffset
+	if uint32(len(b)) < f.Size {
+		err = errors.New("Malformed frame. Invalid size")
+		return
+	}
+
+	fr = b[doff*4 : f.Size]
+	n = len(fr)
+
+	return
 }

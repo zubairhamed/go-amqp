@@ -3,6 +3,8 @@ package performatives
 import (
 	"errors"
 	. "github.com/zubairhamed/go-amqp/types"
+	"log"
+	"github.com/zubairhamed/go-amqp/util"
 )
 
 func NewTransferPerformative() *PerformativeTransfer {
@@ -72,6 +74,8 @@ func (p *PerformativeTransfer) Encode() (enc []byte, l uint, err error) {
 	}
 
 	performativeBytes = append(performativeBytes, bodyFieldBytes...)
+
+	log.Println("transfer bytes", util.ToHex(performativeBytes))
 
 	return performativeBytes, uint(len(performativeBytes)), nil
 }

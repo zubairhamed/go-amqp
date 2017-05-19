@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"reflect"
+	"time"
 )
 
 func DescribeField(t types.AMQPType) string {
@@ -165,9 +166,10 @@ func ReadFromConnection(c net.Conn) ([]byte, error) {
 }
 
 func LogIn(perf, name string) {
-	log.Println("[", name, "] <<", perf)
+
+	log.Println(time.Now(), " - [", name, "] <<", perf)
 }
 
 func LogOut(perf, name string) {
-	log.Println("[", name, "] >>", perf)
+	log.Println(time.Now(), " - [", name, "] >>", perf)
 }
